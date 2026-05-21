@@ -1,13 +1,159 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "windows"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  HOUSEHOLD
+  COLLECTOR
+  ADMIN
+}
+
+enum RequestStatus {
+  OPEN
+  ASSIGNED
+  PICKED_UP
+  COMPLETED
+  CANCELLED
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PointType {
+  EARNED
+  REDEEMED
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  fullName      String
+  role          Role      @default(HOUSEHOLD)
+  phone         String?
+  address       String?
+  latitude      Float?
+  longitude     Float?
+  isVerified    Boolean   @default(false)
+  avatarUrl     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  requestsAsHousehold   SampahRequest[]         @relation("HouseholdRequests")
+  requestsAsCollector   SampahRequest[]         @relation("CollectorRequests")
+  pointsLedger          PointsLedger[]
+  reviewsGiven          Review[]                @relation("ReviewsGiven")
+  reviewsReceived       Review[]                @relation("ReviewsReceived")
+  verification          CollectorVerification?
+  notifications         Notification[]
+  commodityUpdates      CommodityPrice[]
+
+  @@map("users")
+}
+
+model SampahRequest {
+  id              String        @id @default(uuid())
+  householdId     String
+  collectorId     String?
+  status          RequestStatus @default(OPEN)
+  sampahTypes     String
+  estimatedWeight Float?
+  actualWeight    Float?
+  photoUrl        String?
+  notes           String?
+  latitude        Float?
+  longitude       Float?
+  addressDetail   String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  household       User            @relation("HouseholdRequests", fields: [householdId], references: [id])
+  collector       User?           @relation("CollectorRequests", fields: [collectorId], references: [id])
+  pointsLedger    PointsLedger[]
+  reviews         Review[]
+
+  @@map("sampah_requests")
+}
+
+model PointsLedger {
+  id          String      @id @default(uuid())
+  userId      String
+  amount      Int
+  type        PointType
+  requestId   String?
+  description String?
+  createdAt   DateTime    @default(now())
+
+  user        User            @relation(fields: [userId], references: [id])
+  request     SampahRequest?  @relation(fields: [requestId], references: [id])
+
+  @@map("points_ledger")
+}
+
+model Review {
+  id          String    @id @default(uuid())
+  requestId   String
+  reviewerId  String
+  revieweeId  String
+  rating      Int
+  comment     String?
+  createdAt   DateTime  @default(now())
+
+  request     SampahRequest @relation(fields: [requestId], references: [id])
+  reviewer    User          @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  reviewee    User          @relation("ReviewsReceived", fields: [revieweeId], references: [id])
+
+  @@map("reviews")
+}
+
+model CommodityPrice {
+  id          String    @id @default(uuid())
+  name        String
+  pricePerKg  Int
+  updatedBy   String
+  updatedAt   DateTime  @updatedAt
+
+  updater     User      @relation(fields: [updatedBy], references: [id])
+
+  @@map("commodity_prices")
+}
+
+model CollectorVerification {
+  id          String              @id @default(uuid())
+  collectorId String              @unique
+  ktpUrl      String?
+  photoUrl    String?
+  status      VerificationStatus  @default(PENDING)
+  reviewedBy  String?
+  notes       String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  collector   User                @relation(fields: [collectorId], references: [id])
+
+  @@map("collector_verifications")
+}
+
+model Notification {
+  id          String    @id @default(uuid())
+  userId      String
+  title       String
+  message     String
+  type        String
+  referenceId String?
+  isRead      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
 }
