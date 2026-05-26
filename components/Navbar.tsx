@@ -1,0 +1,27 @@
+"use client"
+import { signOut } from "next-auth/react"
+import Link from "next/link"
+const ROLE_CONFIG = {
+  HOUSEHOLD: { label: "Rumah Tangga", bg: "#DCFCE7", color: "#166534" },
+  COLLECTOR:  { label: "Pengepul",    bg: "#FEF9C3", color: "#854D0E" },
+  RECYCLER:   { label: "Recycler",    bg: "#EDE9FE", color: "#5B21B6" },
+  ADMIN:      { label: "Admin",       bg: "#FEE2E2", color: "#991B1B" },
+}
+export default function Navbar({ userName, role }) {
+  const cfg = role ? ROLE_CONFIG[role] : null
+  return (
+    <nav className="bg-white border-b border-gray-100 px-6 py-3.5 flex justify-between items-center sticky top-0 z-50">
+      <div className="flex items-center gap-3">
+        <Link href="/" className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold" style={{background:"#16a34a"}}>CS</div>
+          <span className="text-lg font-bold" style={{color:"#15803d"}}>CuanSampah</span>
+        </Link>
+        {cfg && <span className="text-xs px-2.5 py-1 rounded-full font-medium" style={{background:cfg.bg,color:cfg.color}}>{cfg.label}</span>}
+      </div>
+      <div className="flex items-center gap-4">
+        {userName && <span className="text-sm text-gray-500">Halo, <span className="font-medium text-gray-700">{userName}</span></span>}
+        <button onClick={() => signOut({ callbackUrl: "/login" })} className="text-sm font-medium px-4 py-2 rounded-lg border transition hover:bg-gray-50" style={{borderColor:"#e5e7eb",color:"#374151"}}>Keluar</button>
+      </div>
+    </nav>
+  )
+}

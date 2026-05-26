@@ -1,181 +1,92 @@
 "use client"
-import { useSession, signOut } from "next-auth/react"
+import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-
-function PickupCard({ req, onComplete }: { req: any; onComplete: (id: string, weight: string) => void }) {
+import Navbar from "@/components/Navbar"
+function PickupCard({ req, onComplete }) {
   const [weight, setWeight] = useState("")
   const types = JSON.parse(req.sampahTypes || "[]")
-
   return (
-    <div className="border rounded-xl p-4">
-      <div className="flex gap-2 flex-wrap mb-2">
-        {types.map((t: string) => (
-          <span key={t} className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full capitalize">{t}</span>
-        ))}
+    <div className="p-4 rounded-lg border border-gray-100">
+      <div className="flex gap-1.5 flex-wrap mb-2">
+        {types.map((t) => <span key={t} className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 capitalize">{t}</span>)}
       </div>
-      <p className="text-sm font-medium text-gray-800 mb-1">{req.addressDetail}</p>
-      <p className="text-xs text-gray-500 mb-3">Dari: {req.householdName}</p>
+      <p className="text-sm font-medium text-gray-800 mb-0.5">{req.addressDetail}</p>
+      <p className="text-xs text-gray-400 mb-3">Dari: {req.householdName}</p>
       {req.status !== "COMPLETED" ? (
         <div className="flex gap-2">
-          <input
-            type="number"
-            placeholder="Berat aktual (kg)"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-            className="border rounded-lg px-3 py-1.5 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
-          <button
-            onClick={() => onComplete(req.id, weight)}
-            disabled={!weight}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium disabled:opacity-50"
-          >
-            Selesaikan
-          </button>
+          <input type="number" placeholder="Berat aktual (kg)" value={weight} onChange={e => setWeight(e.target.value)} className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm" />
+          <button onClick={() => onComplete(req.id, weight)} disabled={!weight} className="px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-40" style={{background:"#16a34a"}}>Selesaikan</button>
         </div>
       ) : (
-        <p className="text-sm text-green-600 font-medium">Selesai - {req.actualWeight} kg</p>
+        <span className="text-xs px-2.5 py-1 rounded-full bg-green-100 text-green-800">Selesai - {req.actualWeight} kg</span>
       )}
     </div>
   )
 }
-
 export default function CollectorDashboard() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [requests, setRequests] = useState<any[]>([])
-  const [myPickups, setMyPickups] = useState<any[]>([])
+  const [requests, setRequests] = useState([])
+  const [myPickups, setMyPickups] = useState([])
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<"available" | "mypickups">("available")
-
-  useEffect(() => {
-    if (status === "unauthenticated") router.push("/login")
-  }, [status, router])
-
-  useEffect(() => {
-    if (status === "authenticated") fetchData()
-  }, [status])
-
+  const [tab, setTab] = useState("available")
+  useEffect(() => { if (status === "unauthenticated") router.push("/login") }, [status, router])
+  useEffect(() => { if (status === "authenticated") fetchData() }, [status])
   async function fetchData() {
     setLoading(true)
-    const [avail, mine] = await Promise.all([
-      fetch("/api/requests/available").then((r) => r.json()),
-      fetch("/api/requests/my-pickups").then((r) => r.json()),
+    const [a, m] = await Promise.all([
+      fetch("/api/requests/available").then(r => r.json()),
+      fetch("/api/requests/my-pickups").then(r => r.json()),
     ])
-    setRequests(avail.requests || [])
-    setMyPickups(mine.requests || [])
+    setRequests(a.requests || [])
+    setMyPickups(m.requests || [])
     setLoading(false)
   }
-
-  async function acceptRequest(requestId: string) {
-    const res = await fetch(`/api/requests/${requestId}/accept`, { method: "POST" })
+  async function acceptRequest(id) {
+    const res = await fetch("/api/requests/" + id + "/accept", { method: "POST" })
     if (res.ok) fetchData()
   }
-
-  async function completeRequest(requestId: string, weight: string) {
+  async function completeRequest(id, weight) {
     if (!weight) return
-    const res = await fetch(`/api/requests/${requestId}/complete`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const res = await fetch("/api/requests/" + id + "/complete", {
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ actualWeight: parseFloat(weight) }),
     })
-    if (res.ok) {
-      const data = await res.json()
-      alert(`Selesai! Household mendapat ${data.pointsEarned} poin`)
-      fetchData()
-    }
+    if (res.ok) { const d = await res.json(); alert("Selesai! Household mendapat " + d.pointsEarned + " poin"); fetchData() }
   }
-
-  if (status === "loading") return <div className="min-h-screen flex items-center justify-center">Loading...</div>
-
+  if (status === "loading") return <div className="min-h-screen flex items-center justify-center">Memuat...</div>
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm px-6 py-4 flex justify-between items-center">
-        <span className="text-2xl font-bold text-green-700">SampahKita</span>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-600">Halo, {session?.user?.name}</span>
-          <button onClick={() => signOut({ callbackUrl: "/login" })} className="text-sm text-red-500 hover:text-red-700">Keluar</button>
-        </div>
-      </nav>
-
-      <div className="max-w-4xl mx-auto p-6">
+      <Navbar userName={session?.user?.name || ""} role="COLLECTOR" />
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        <div className="mb-6"><h1 className="text-xl font-bold text-gray-900">Dashboard Pengepul</h1><p className="text-sm text-gray-500">Ambil request sampah dan kelola pickup kamu</p></div>
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-white rounded-xl p-6 shadow-sm border">
-            <p className="text-sm text-gray-500">Request Tersedia</p>
-            <p className="text-3xl font-bold text-green-600">{requests.length}</p>
-          </div>
-          <div className="bg-white rounded-xl p-6 shadow-sm border">
-            <p className="text-sm text-gray-500">Sedang Diproses</p>
-            <p className="text-3xl font-bold text-blue-600">{myPickups.filter(r => r.status !== "COMPLETED").length}</p>
-          </div>
+          <div className="bg-white rounded-xl p-5 border border-gray-100"><div className="text-2xl font-bold mb-1" style={{color:"#16a34a"}}>{requests.length}</div><div className="text-xs text-gray-500">Request Tersedia</div></div>
+          <div className="bg-white rounded-xl p-5 border border-gray-100"><div className="text-2xl font-bold mb-1" style={{color:"#d97706"}}>{myPickups.filter(r => r.status !== "COMPLETED").length}</div><div className="text-xs text-gray-500">Sedang Diproses</div></div>
         </div>
-
         <div className="flex gap-2 mb-4">
-          <button
-            onClick={() => setTab("available")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${tab === "available" ? "bg-green-600 text-white" : "bg-white text-gray-600 border"}`}
-          >
-            Request Tersedia ({requests.length})
-          </button>
-          <button
-            onClick={() => setTab("mypickups")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${tab === "mypickups" ? "bg-green-600 text-white" : "bg-white text-gray-600 border"}`}
-          >
-            Pickup Saya ({myPickups.length})
-          </button>
+          <button onClick={() => setTab("available")} className="px-4 py-2 text-sm font-medium rounded-lg border" style={tab==="available" ? {background:"#f0fdf4",color:"#16a34a",borderColor:"#16a34a"} : {background:"#fff",color:"#6b7280",borderColor:"#e5e7eb"}}>Request Tersedia ({requests.length})</button>
+          <button onClick={() => setTab("mypickups")} className="px-4 py-2 text-sm font-medium rounded-lg border" style={tab==="mypickups" ? {background:"#f0fdf4",color:"#16a34a",borderColor:"#16a34a"} : {background:"#fff",color:"#6b7280",borderColor:"#e5e7eb"}}>Pickup Saya ({myPickups.length})</button>
+          <button onClick={() => router.push("/collector/batch/new")} className="ml-auto text-xs font-semibold px-3 py-2 rounded-lg text-white" style={{background:"#16a34a"}}>+ Listing Batch</button>
         </div>
-
-        <div className="bg-white rounded-xl shadow-sm border p-6">
-          {loading ? (
-            <div className="text-center py-8 text-gray-400">Memuat...</div>
-          ) : tab === "available" ? (
-            requests.length === 0 ? (
-              <div className="text-center py-12 text-gray-400">
-                <p className="text-4xl mb-3">?</p>
-                <p className="font-medium">Tidak ada request tersedia</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {requests.map((req: any) => {
-                  const types = JSON.parse(req.sampahTypes || "[]")
-                  return (
-                    <div key={req.id} className="border rounded-xl p-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="flex gap-2 flex-wrap mb-1">
-                            {types.map((t: string) => (
-                              <span key={t} className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full capitalize">{t}</span>
-                            ))}
-                          </div>
-                          <p className="text-sm font-medium text-gray-800">{req.addressDetail}</p>
-                          <p className="text-xs text-gray-500">Dari: {req.householdName}</p>
-                          {req.estimatedWeight && <p className="text-xs text-gray-400">Estimasi: {req.estimatedWeight} kg</p>}
-                          {req.notes && <p className="text-xs text-gray-400">Catatan: {req.notes}</p>}
-                        </div>
-                        <button
-                          onClick={() => acceptRequest(req.id)}
-                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ml-4"
-                        >
-                          Ambil Request
-                        </button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )
+        <div className="bg-white rounded-xl border border-gray-100 p-4">
+          {loading ? (<div className="text-center py-10 text-sm text-gray-400">Memuat data...</div>)
+          : tab === "available" ? (
+            requests.length === 0 ? (<div className="text-center py-14"><p className="text-sm text-gray-500">Tidak ada request tersedia</p></div>)
+            : <div className="space-y-2">{requests.map((req) => { const types = JSON.parse(req.sampahTypes || "[]"); return (
+                <div key={req.id} className="flex justify-between items-start p-4 rounded-lg border border-gray-100">
+                  <div>
+                    <div className="flex gap-1.5 mb-1.5">{types.map((t) => <span key={t} className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 capitalize">{t}</span>)}</div>
+                    <p className="text-sm font-medium text-gray-800">{req.addressDetail}</p>
+                    <p className="text-xs text-gray-400">Dari: {req.householdName}{req.estimatedWeight ? " - Est. " + req.estimatedWeight + " kg" : ""}</p>
+                  </div>
+                  <button onClick={() => acceptRequest(req.id)} className="text-sm font-semibold text-white px-4 py-2 rounded-lg ml-4" style={{background:"#16a34a"}}>Ambil</button>
+                </div>
+              )})}</div>
           ) : (
-            myPickups.length === 0 ? (
-              <div className="text-center py-12 text-gray-400">
-                <p>Belum ada pickup</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {myPickups.map((req: any) => (
-                  <PickupCard key={req.id} req={req} onComplete={completeRequest} />
-                ))}
-              </div>
-            )
+            myPickups.length === 0 ? (<div className="text-center py-14"><p className="text-sm text-gray-500">Belum ada pickup</p></div>)
+            : <div className="space-y-2">{myPickups.map((req) => <PickupCard key={req.id} req={req} onComplete={completeRequest} />)}</div>
           )}
         </div>
       </div>

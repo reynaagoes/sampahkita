@@ -1,194 +1,170 @@
 "use client"
-import { useSession, signOut } from "next-auth/react"
+import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import Navbar from "@/components/Navbar"
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [stats, setStats] = useState({ users: 0, pending: 0, transactions: 0, totalPoints: 0 })
-  const [pendingCollectors, setPendingCollectors] = useState<any[]>([])
-  const [recentRequests, setRecentRequests] = useState<any[]>([])
-  const [tab, setTab] = useState<"overview" | "verifikasi" | "transaksi">("overview")
-  const [loading, setLoading] = useState(true)
+  const [stats, setStats]                   = useState({ users: 0, pending: 0, transactions: 0, totalPoints: 0 })
+  const [pendingCollectors, setPending]      = useState<any[]>([])
+  const [recentRequests, setRecent]          = useState<any[]>([])
+  const [tab, setTab]                        = useState<"overview"|"verifikasi"|"transaksi">("overview")
+  const [loading, setLoading]               = useState(true)
 
-  useEffect(() => {
-    if (status === "unauthenticated") router.push("/login")
-  }, [status, router])
-
-  useEffect(() => {
-    if (status === "authenticated") fetchData()
-  }, [status])
+  useEffect(() => { if (status === "unauthenticated") router.push("/login") }, [status, router])
+  useEffect(() => { if (status === "authenticated") fetchData() }, [status])
 
   async function fetchData() {
     setLoading(true)
-    const [statsRes, collectorsRes, requestsRes] = await Promise.all([
-      fetch("/api/admin/stats").then(r => r.json()),
-      fetch("/api/admin/collectors").then(r => r.json()),
-      fetch("/api/admin/requests").then(r => r.json()),
+    const [s, c, r] = await Promise.all([
+      fetch("/api/admin/stats").then(x => x.json()),
+      fetch("/api/admin/collectors").then(x => x.json()),
+      fetch("/api/admin/requests").then(x => x.json()),
     ])
-    setStats(statsRes)
-    setPendingCollectors(collectorsRes.collectors || [])
-    setRecentRequests(requestsRes.requests || [])
+    setStats(s)
+    setPending(c.collectors || [])
+    setRecent(r.requests || [])
     setLoading(false)
   }
 
-  async function verifyCollector(collectorId: string, action: "APPROVED" | "REJECTED") {
+  async function verify(collectorId: string, action: "APPROVED"|"REJECTED") {
     await fetch("/api/admin/collectors", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ collectorId, action }),
     })
     fetchData()
   }
 
-  if (status === "loading") return <div className="min-h-screen flex items-center justify-center">Loading...</div>
+  if (status === "loading") return <div className="min-h-screen flex items-center justify-center bg-white text-sm text-gray-400">Memuat...</div>
 
-  const STATUS_COLOR: Record<string, string> = {
-    OPEN: "bg-yellow-100 text-yellow-700",
-    ASSIGNED: "bg-blue-100 text-blue-700",
-    COMPLETED: "bg-green-100 text-green-700",
-    CANCELLED: "bg-red-100 text-red-700",
+  const STATUS_STYLE: Record<string, [string,string]> = {
+    OPEN: ["#fef9c3","#854d0e"], ASSIGNED: ["#dbeafe","#1e40af"],
+    COMPLETED: ["#dcfce7","#166534"], CANCELLED: ["#fee2e2","#991b1b"],
   }
+
+  const tabs = [
+    { key: "overview",   label: "Overview" },
+    { key: "verifikasi", label: `Verifikasi (${stats.pending})` },
+    { key: "transaksi",  label: "Semua Transaksi" },
+  ]
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm px-6 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl font-bold text-green-700">SampahKita</span>
-          <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-medium">Admin</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-600">Halo, {session?.user?.name}</span>
-          <button onClick={() => signOut({ callbackUrl: "/login" })} className="text-sm text-red-500 hover:text-red-700">Keluar</button>
-        </div>
-      </nav>
-
-      <div className="max-w-5xl mx-auto p-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-xl p-5 shadow-sm border">
-            <p className="text-sm text-gray-500">Total User</p>
-            <p className="text-3xl font-bold text-green-600">{stats.users}</p>
-          </div>
-          <div className="bg-white rounded-xl p-5 shadow-sm border">
-            <p className="text-sm text-gray-500">Verifikasi Pending</p>
-            <p className="text-3xl font-bold text-yellow-500">{stats.pending}</p>
-          </div>
-          <div className="bg-white rounded-xl p-5 shadow-sm border">
-            <p className="text-sm text-gray-500">Total Transaksi</p>
-            <p className="text-3xl font-bold text-blue-600">{stats.transactions}</p>
-          </div>
-          <div className="bg-white rounded-xl p-5 shadow-sm border">
-            <p className="text-sm text-gray-500">Total Poin Beredar</p>
-            <p className="text-3xl font-bold text-purple-600">{Number(stats.totalPoints).toLocaleString()}</p>
-          </div>
+      <Navbar userName={session?.user?.name || ""} role="ADMIN" />
+      <div className="max-w-5xl mx-auto px-6 py-8">
+        <div className="mb-6">
+          <h1 className="text-xl font-bold text-gray-900">Admin Dashboard</h1>
+          <p className="text-sm text-gray-500">Kelola platform dan monitor aktivitas CuanSampah</p>
         </div>
 
-        <div className="flex gap-2 mb-4">
-          {["overview", "verifikasi", "transaksi"].map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t as any)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition ${tab === t ? "bg-green-600 text-white" : "bg-white text-gray-600 border"}`}
-            >
-              {t === "verifikasi" ? `Verifikasi Collector (${stats.pending})` : t === "transaksi" ? "Semua Transaksi" : "Overview"}
-            </button>
+        <div className="grid grid-cols-4 gap-4 mb-6">
+          {[
+            { label: "Total User",        value: stats.users,                              icon: "??", accent: "#16a34a" },
+            { label: "Pending Verifikasi", value: stats.pending,                           icon: "?", accent: "#d97706" },
+            { label: "Total Transaksi",   value: stats.transactions,                       icon: "??", accent: "#7c3aed" },
+            { label: "Poin Beredar",      value: Number(stats.totalPoints).toLocaleString("id-ID"), icon: "??", accent: "#0891b2" },
+          ].map(s => (
+            <div key={s.label} className="bg-white rounded-xl p-4 border border-gray-100">
+              <div className="text-xl mb-2">{s.icon}</div>
+              <div className="text-xl font-bold mb-0.5" style={{ color: s.accent }}>{s.value}</div>
+              <div className="text-xs text-gray-500">{s.label}</div>
+            </div>
           ))}
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border p-6">
-          {loading ? (
-            <div className="text-center py-8 text-gray-400">Memuat...</div>
-          ) : tab === "verifikasi" ? (
-            pendingCollectors.length === 0 ? (
-              <div className="text-center py-12 text-gray-400">
-                <p className="text-4xl mb-3">?</p>
-                <p className="font-medium">Tidak ada collector pending</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {pendingCollectors.map((c: any) => (
-                  <div key={c.id} className="border rounded-xl p-4 flex justify-between items-center">
-                    <div>
-                      <p className="font-medium text-gray-800">{c.fullName}</p>
-                      <p className="text-sm text-gray-500">{c.email}</p>
-                      <p className="text-xs text-gray-400">{c.phone}</p>
-                      <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full mt-1 inline-block">Pending Verifikasi</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => verifyCollector(c.id, "APPROVED")}
-                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
-                      >
-                        Setujui
-                      </button>
-                      <button
-                        onClick={() => verifyCollector(c.id, "REJECTED")}
-                        className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium"
-                      >
-                        Tolak
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )
-          ) : tab === "transaksi" ? (
-            <div className="space-y-3">
-              {recentRequests.map((req: any) => {
-                const types = JSON.parse(req.sampahTypes || "[]")
-                return (
-                  <div key={req.id} className="border rounded-xl p-4 flex justify-between items-center">
-                    <div>
-                      <div className="flex gap-1 mb-1">
-                        {types.map((t: string) => (
-                          <span key={t} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full capitalize">{t}</span>
-                        ))}
+        <div className="bg-white rounded-xl border border-gray-100">
+          <div className="flex border-b border-gray-100 px-4 pt-4 gap-1">
+            {tabs.map(t => (
+              <button key={t.key} onClick={() => setTab(t.key as any)}
+                className="px-4 py-2 text-sm font-medium rounded-t-lg transition"
+                style={tab === t.key ? { color: "#16a34a", borderBottom: "2px solid #16a34a", background: "#f0fdf4" } : { color: "#6b7280" }}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="p-5">
+            {loading ? (
+              <div className="text-center py-10 text-sm text-gray-400">Memuat...</div>
+            ) : tab === "verifikasi" ? (
+              pendingCollectors.length === 0 ? (
+                <div className="text-center py-14">
+                  <div className="text-4xl mb-3">?</div>
+                  <p className="text-sm text-gray-500">Tidak ada collector pending</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pendingCollectors.map((c: any) => (
+                    <div key={c.id} className="flex justify-between items-center p-4 rounded-lg border border-gray-100">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">{c.fullName}</p>
+                        <p className="text-xs text-gray-500">{c.email} ¡¤ {c.phone}</p>
+                        <span className="text-xs px-2 py-0.5 rounded-full mt-1 inline-block" style={{ background: "#fef9c3", color: "#854d0e" }}>Pending</span>
                       </div>
-                      <p className="text-sm font-medium text-gray-800">{req.addressDetail}</p>
-                      <p className="text-xs text-gray-500">Dari: {req.householdName}</p>
-                      {req.actualWeight && <p className="text-xs text-gray-400">Berat: {req.actualWeight} kg</p>}
+                      <div className="flex gap-2">
+                        <button onClick={() => verify(c.id, "APPROVED")}
+                          className="text-sm font-semibold text-white px-4 py-2 rounded-lg hover:opacity-90 transition"
+                          style={{ background: "#16a34a" }}>Setujui</button>
+                        <button onClick={() => verify(c.id, "REJECTED")}
+                          className="text-sm font-semibold px-4 py-2 rounded-lg border hover:bg-red-50 transition"
+                          style={{ color: "#dc2626", borderColor: "#fca5a5" }}>Tolak</button>
+                      </div>
                     </div>
-                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${STATUS_COLOR[req.status] || "bg-gray-100 text-gray-600"}`}>
-                      {req.status}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="border rounded-xl p-4">
-                <p className="text-sm font-medium text-gray-700 mb-3">Status Transaksi</p>
-                {["OPEN", "ASSIGNED", "COMPLETED", "CANCELLED"].map((s) => {
-                  const count = recentRequests.filter(r => r.status === s).length
+                  ))}
+                </div>
+              )
+            ) : tab === "transaksi" ? (
+              <div className="space-y-2">
+                {recentRequests.map((req: any) => {
+                  const types = JSON.parse(req.sampahTypes || "[]")
+                  const [bg, color] = STATUS_STYLE[req.status] || ["#f3f4f6","#374151"]
                   return (
-                    <div key={s} className="flex justify-between items-center py-1.5 border-b last:border-0">
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLOR[s] || "bg-gray-100"}`}>{s}</span>
-                      <span className="font-semibold text-gray-800">{count}</span>
+                    <div key={req.id} className="flex justify-between items-center p-4 rounded-lg border border-gray-50 hover:bg-gray-50">
+                      <div>
+                        <div className="flex gap-1.5 mb-1">
+                          {types.map((t: string) => <span key={t} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full capitalize">{t}</span>)}
+                        </div>
+                        <p className="text-sm font-medium text-gray-800">{req.addressDetail}</p>
+                        <p className="text-xs text-gray-400">Dari: {req.householdName}{req.actualWeight && ` ¡¤ ${req.actualWeight} kg`}</p>
+                      </div>
+                      <span className="text-xs px-2.5 py-1 rounded-full font-medium" style={{ background: bg, color }}>{req.status}</span>
                     </div>
                   )
                 })}
               </div>
-              <div className="border rounded-xl p-4">
-                <p className="text-sm font-medium text-gray-700 mb-3">Aktivitas Platform</p>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">Total Request</span>
-                    <span className="font-semibold">{recentRequests.length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">Selesai</span>
-                    <span className="font-semibold text-green-600">{recentRequests.filter(r => r.status === "COMPLETED").length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">Poin Beredar</span>
-                    <span className="font-semibold text-purple-600">{Number(stats.totalPoints).toLocaleString()}</span>
-                  </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-xl p-4 border border-gray-100">
+                  <p className="text-sm font-semibold text-gray-700 mb-3">Status Transaksi</p>
+                  {["OPEN","ASSIGNED","COMPLETED","CANCELLED"].map(s => {
+                    const count = recentRequests.filter(r => r.status === s).length
+                    const [bg, color] = STATUS_STYLE[s] || ["#f3f4f6","#374151"]
+                    return (
+                      <div key={s} className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
+                        <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: bg, color }}>{s}</span>
+                        <span className="text-sm font-bold text-gray-700">{count}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="rounded-xl p-4 border border-gray-100">
+                  <p className="text-sm font-semibold text-gray-700 mb-3">Ringkasan Platform</p>
+                  {[
+                    ["Total Request", recentRequests.length],
+                    ["Selesai", recentRequests.filter(r => r.status === "COMPLETED").length],
+                    ["Poin Beredar", Number(stats.totalPoints).toLocaleString("id-ID")],
+                  ].map(([label, val]) => (
+                    <div key={label as string} className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
+                      <span className="text-xs text-gray-500">{label}</span>
+                      <span className="text-sm font-bold text-gray-700">{val}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

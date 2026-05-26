@@ -1,4 +1,5 @@
-@import "tailwindcss";
+﻿const fs = require('fs');
+const code = `@import "tailwindcss";
 
 @theme {
   --color-green-50: #f0fdf4;
@@ -13,3 +14,6 @@ body {
   background-color: #f8fafc;
   color: #1e293b;
 }
+`;
+fs.writeFileSync('app/globals.css', code, {encoding:'utf8'});
+console.log('globals OK');
