@@ -11,6 +11,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Semua field wajib diisi" }, { status: 400 })
     }
 
+    if (password.length < 8) {
+      return NextResponse.json({ error: "Password minimal 8 karakter" }, { status: 400 })
+    }
+
     const [existing] = await pool.execute(
       "SELECT id FROM users WHERE email = ?",
       [email]

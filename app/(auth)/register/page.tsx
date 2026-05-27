@@ -20,6 +20,12 @@ export default function RegisterPage() {
     setLoading(true)
     setError("")
 
+    if (form.password.length < 8) {
+      setError("Password minimal 8 karakter")
+      setLoading(false)
+      return
+    }
+
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -81,6 +87,11 @@ export default function RegisterPage() {
               placeholder="Min. 8 karakter"
               required
             />
+            {form.password.length > 0 && form.password.length < 8 && (
+              <p className="text-red-500 text-xs mt-1">
+                Password terlalu pendek ({form.password.length}/8 karakter)
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">No. Telepon</label>
