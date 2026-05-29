@@ -1,4 +1,6 @@
-"use client"
+﻿const fs = require('fs');
+
+const household = `"use client"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -128,4 +130,7 @@ export default function HouseholdDashboard() {
       </div>
     </div>
   )
-}
+}`;
+
+fs.writeFileSync('app/(dashboard)/household/page.tsx', household, {encoding:'utf8'});
+console.log('household OK');

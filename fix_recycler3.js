@@ -1,4 +1,6 @@
-"use client"
+﻿const fs = require('fs');
+
+const recycler = `"use client"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -165,4 +167,7 @@ export default function RecyclerDashboard() {
       </div>
     </div>
   )
-}
+}`;
+
+fs.writeFileSync('app/(dashboard)/recycler/page.tsx', recycler, {encoding:'utf8'});
+console.log('recycler OK');
