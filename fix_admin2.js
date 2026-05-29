@@ -1,4 +1,6 @@
-"use client"
+﻿const fs = require('fs');
+
+const admin = `"use client"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -171,4 +173,7 @@ export default function AdminDashboard() {
       </div>
     </div>
   )
-}
+}`;
+
+fs.writeFileSync('app/(dashboard)/admin/page.tsx', admin, {encoding:'utf8'});
+console.log('admin OK');

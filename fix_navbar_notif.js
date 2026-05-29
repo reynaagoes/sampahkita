@@ -1,4 +1,6 @@
-"use client"
+﻿const fs = require('fs');
+
+const navbar = `"use client"
 import { signOut } from "next-auth/react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
@@ -105,4 +107,7 @@ export default function Navbar({ userName, role }) {
       </div>
     </nav>
   )
-}
+}`;
+
+fs.writeFileSync('components/Navbar.tsx', navbar, {encoding:'utf8'});
+console.log('Navbar with notif OK');

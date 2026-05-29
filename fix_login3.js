@@ -1,4 +1,6 @@
-"use client"
+﻿const fs = require('fs');
+
+const login = `"use client"
 import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
@@ -102,4 +104,7 @@ export default function LoginPage() {
       </div>
     </div>
   )
-}
+}`;
+
+fs.writeFileSync('app/(auth)/login/page.tsx', login, {encoding:'utf8'});
+console.log('login OK');

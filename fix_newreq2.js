@@ -1,4 +1,6 @@
-"use client"
+﻿const fs = require('fs');
+
+const newreq = `"use client"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
@@ -108,4 +110,7 @@ export default function NewRequestPage() {
       </div>
     </div>
   )
-}
+}`;
+
+fs.writeFileSync('app/(dashboard)/household/request/new/page.tsx', newreq, {encoding:'utf8'});
+console.log('newrequest OK');

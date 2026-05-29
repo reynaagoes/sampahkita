@@ -1,4 +1,6 @@
-"use client"
+﻿const fs = require('fs');
+
+const collector = `"use client"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -153,4 +155,7 @@ export default function CollectorDashboard() {
       </div>
     </div>
   )
-}
+}`;
+
+fs.writeFileSync('app/(dashboard)/collector/page.tsx', collector, {encoding:'utf8'});
+console.log('collector OK');
