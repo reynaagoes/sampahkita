@@ -1,0 +1,575 @@
+"use client"
+
+import Navbar from "@/components/Navbar"
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import { useEffect, useMemo, useState } from "react"
+
+type Listing = {
+  id: string
+  title: string
+  description?: string | null
+  photoUrl?: string | null
+  sellerName?: string | null
+  currentPrice: number | string
+  minPrice: number | string
+  maxPrice: number | string
+  priceStep: number | string
+  bidCount?: number | null
+  expiresAt?: string | null
+  category?: string | null
+  type?: string | null
+  location?: string | null
+}
+
+type ApiResponse = {
+  listings?: Listing[]
+  error?: string
+}
+
+const CATEGORIES = ["Semua", "Elektronik", "Plastik", "Kertas", "Logam", "Kaca", "Organik", "Lainnya"] as const
+
+const CATEGORY_ICON: Record<string, string> = {
+  Elektronik: "EL",
+  Plastik: "PL",
+  Kertas: "KT",
+  Logam: "LG",
+  Kaca: "KC",
+  Organik: "OR",
+  Lainnya: "LN",
+  Semua: "ALL",
+}
+
+function toNumber(value: unknown, fallback = 0) {
+  if (typeof value === "number") return Number.isFinite(value) ? value : fallback
+  if (typeof value === "string") {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : fallback
+  }
+  if (value && typeof value === "object" && "toString" in value) {
+    const parsed = Number(value.toString())
+    return Number.isFinite(parsed) ? parsed : fallback
+  }
+  return fallback
+}
+
+function rupiah(value: unknown) {
+  return "Rp " + toNumber(value).toLocaleString("id-ID")
+}
+
+function getCategory(item: Listing) {
+  const explicit = item.category || item.type
+  if (explicit && CATEGORIES.includes(explicit as (typeof CATEGORIES)[number])) return explicit
+
+  const text = `${item.title} ${item.description || ""}`.toLowerCase()
+  if (/(hp|smartphone|laptop|charger|kabel|elektronik|phone|samsung|redmi)/.test(text)) return "Elektronik"
+  if (/(plastik|botol pet|pet|galon)/.test(text)) return "Plastik"
+  if (/(kertas|kardus|buku|box|dus)/.test(text)) return "Kertas"
+  if (/(logam|aluminium|besi|tembaga|kaleng)/.test(text)) return "Logam"
+  if (/(kaca|botol kaca|gelas)/.test(text)) return "Kaca"
+  if (/(organik|kompos|daun|sisa makanan)/.test(text)) return "Organik"
+  return "Lainnya"
+}
+
+function getTimeLeft(expiresAt?: string | null) {
+  if (!expiresAt) return "Waktu fleksibel"
+  const diff = new Date(expiresAt).getTime() - Date.now()
+  if (diff <= 0) return "Berakhir"
+
+  const days = Math.floor(diff / 86_400_000)
+  const hours = Math.floor((diff % 86_400_000) / 3_600_000)
+  const minutes = Math.floor((diff % 3_600_000) / 60_000)
+
+  if (days > 0) return `${days}h ${hours}j`
+  if (hours > 0) return `${hours}j ${minutes}m`
+  return `${minutes}m`
+}
+
+function calcProgress(item: Listing) {
+  const current = toNumber(item.currentPrice)
+  const min = toNumber(item.minPrice)
+  const max = toNumber(item.maxPrice)
+  if (max <= min) return 0
+  return Math.min(100, Math.max(0, Math.round(((current - min) / (max - min)) * 100)))
+}
+
+function MiniIcon({ name }: { name: string }) {
+  return <span aria-hidden="true">{CATEGORY_ICON[name] || "LN"}</span>
+}
+
+export default function BidPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
+  const [listings, setListings] = useState<Listing[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState("")
+  const [category, setCategory] = useState<(typeof CATEGORIES)[number]>("Semua")
+  const [location, setLocation] = useState("Semua Lokasi")
+  const [maxPrice, setMaxPrice] = useState(500000)
+
+  useEffect(() => {
+    if (status === "unauthenticated") router.push("/login")
+  }, [status, router])
+
+  useEffect(() => {
+    if (status === "authenticated") void fetchListings()
+  }, [status])
+
+  async function fetchListings() {
+    setLoading(true)
+    try {
+      const res = await fetch("/api/bid")
+      const data = (await res.json()) as ApiResponse
+      setListings(data.listings || [])
+    } catch {
+      setListings([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function placeBid(listingId: string) {
+    const res = await fetch("/api/bid/" + listingId, { method: "POST" })
+    const data = (await res.json()) as { newPrice?: number; error?: string }
+
+    if (res.ok) {
+      alert("Bid berhasil! Harga sekarang: " + rupiah(data.newPrice || 0))
+      await fetchListings()
+    } else {
+      alert(data.error || "Bid gagal")
+    }
+  }
+
+  const visibleListings = useMemo(() => {
+    const query = search.trim().toLowerCase()
+
+    return listings.filter((item) => {
+      const itemCategory = getCategory(item)
+      const title = item.title.toLowerCase()
+      const seller = (item.sellerName || "").toLowerCase()
+      const itemLocation = (item.location || "Semua Lokasi").toLowerCase()
+
+      const matchesSearch = !query || title.includes(query) || seller.includes(query) || itemCategory.toLowerCase().includes(query)
+      const matchesCategory = category === "Semua" || itemCategory === category
+      const matchesLocation = location === "Semua Lokasi" || itemLocation.includes(location.toLowerCase())
+      const matchesPrice = toNumber(item.currentPrice) <= maxPrice
+
+      return matchesSearch && matchesCategory && matchesLocation && matchesPrice
+    })
+  }, [listings, search, category, location, maxPrice])
+
+  const activeListings = listings.filter((item) => getTimeLeft(item.expiresAt) !== "Berakhir").length
+  const totalBids = listings.reduce((sum, item) => sum + toNumber(item.bidCount), 0)
+  const topListings = [...listings].sort((a, b) => toNumber(b.bidCount) - toNumber(a.bidCount)).slice(0, 3)
+  const latestActivity = [...listings].slice(0, 3)
+
+  if (status === "loading") return <div className="page-loader">Memuat...</div>
+
+  return (
+    <>
+      <Navbar userName={session?.user?.name} role="HOUSEHOLD" />
+
+      <main className="market-page">
+        <section className="market-hero">
+          <div className="market-illustration" aria-hidden="true">
+            <span className="market-leaf one" />
+            <span className="market-leaf two" />
+            <span className="market-leaf three" />
+            <div className="market-phone" />
+            <div className="market-bin" />
+            <div className="market-coin">Rp</div>
+          </div>
+
+          <div className="market-hero-main">
+            <span className="market-eyebrow">Marketplace Daur Ulang</span>
+            <h1 className="market-title">
+              Pasar<span>Cuan</span>
+            </h1>
+            <p className="market-subtitle">
+              Marketplace dan lelang barang bernilai dari sesama pengguna. Cari barang bekas layak pakai,
+              material daur ulang, atau produk yang masih punya nilai jual.
+            </p>
+
+            <div className="market-search-row">
+              <label className="market-search">
+                <span aria-hidden="true">Q</span>
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Cari barang, kategori, atau penjual..."
+                />
+              </label>
+
+              <label className="market-select">
+                <span aria-hidden="true">LOC</span>
+                <select value={location} onChange={(event) => setLocation(event.target.value)}>
+                  <option>Semua Lokasi</option>
+                  <option>Jakarta</option>
+                  <option>Bandung</option>
+                  <option>Bekasi</option>
+                  <option>Tangerang</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="category-row">
+              {CATEGORIES.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  className={`category-chip ${category === item ? "active" : ""}`}
+                  onClick={() => setCategory(item)}
+                >
+                  <MiniIcon name={item} />
+                  {item}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="market-hero-cta">
+            <button type="button" className="market-primary-btn" onClick={() => router.push("/bid/new")}>
+              <span aria-hidden="true">+</span>
+              Jual Barang
+            </button>
+
+            <div className="market-cta-note">
+              <strong>Ubah sampah jadi cuan</strong>
+              <span>Dukung lingkungan, dapatkan keuntungan.</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="market-layout">
+          <aside className="filter-card">
+            <h2 className="panel-title">
+              <span className="green-icon">FILTER</span>
+              Filter Pencarian
+            </h2>
+
+            <div className="filter-section">
+              <label className="filter-label">Kategori</label>
+              <div className="filter-control">
+                <select value={category} onChange={(event) => setCategory(event.target.value as (typeof CATEGORIES)[number])}>
+                  {CATEGORIES.map((item) => (
+                    <option key={item}>{item}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="filter-section">
+              <label className="filter-label">Kondisi</label>
+              <div className="filter-control">
+                <select>
+                  <option>Semua Kondisi</option>
+                  <option>Baru</option>
+                  <option>Layak pakai</option>
+                  <option>Material daur ulang</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="filter-section">
+              <label className="filter-label">Rentang Harga Maksimum</label>
+              <input
+                className="price-range"
+                type="range"
+                min="10000"
+                max="500000"
+                step="10000"
+                value={maxPrice}
+                onChange={(event) => setMaxPrice(Number(event.target.value))}
+              />
+              <div className="price-row">
+                <div className="filter-control">
+                  <input value="10.000" readOnly aria-label="Harga minimum" />
+                </div>
+                <div className="filter-control">
+                  <input value={maxPrice.toLocaleString("id-ID")} readOnly aria-label="Harga maksimum" />
+                </div>
+              </div>
+            </div>
+
+            <div className="filter-section">
+              <label className="filter-label">Lokasi</label>
+              <div className="filter-control">
+                <select value={location} onChange={(event) => setLocation(event.target.value)}>
+                  <option>Semua Lokasi</option>
+                  <option>Jakarta</option>
+                  <option>Bandung</option>
+                  <option>Bekasi</option>
+                  <option>Tangerang</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="filter-section">
+              <label className="filter-label">Status Lelang</label>
+              <label className="filter-check">
+                <span><input type="checkbox" defaultChecked /> Sedang Berlangsung</span>
+                <span className="filter-pill">{activeListings}</span>
+              </label>
+              <label className="filter-check">
+                <span><input type="checkbox" /> Akan Dimulai</span>
+                <span className="filter-pill">0</span>
+              </label>
+              <label className="filter-check">
+                <span><input type="checkbox" /> Selesai</span>
+                <span className="filter-pill">{Math.max(0, listings.length - activeListings)}</span>
+              </label>
+            </div>
+
+            <button type="button" className="apply-filter-btn">
+              Terapkan Filter
+            </button>
+          </aside>
+
+          <div className="market-main">
+            <div className="market-stats">
+              <div className="market-stat">
+                <div className="market-stat-icon">BI</div>
+                <div>
+                  <small>Bid Aktif</small>
+                  <strong>{activeListings}</strong>
+                  <span>Sedang berlangsung</span>
+                </div>
+              </div>
+
+              <div className="market-stat">
+                <div className="market-stat-icon">OK</div>
+                <div>
+                  <small>Barang Dipantau</small>
+                  <strong>{visibleListings.length}</strong>
+                  <span>Hasil filter saat ini</span>
+                </div>
+              </div>
+
+              <div className="market-stat">
+                <div className="market-stat-icon">TB</div>
+                <div>
+                  <small>Total Bid</small>
+                  <strong>{totalBids}</strong>
+                  <span>Akumulasi penawaran</span>
+                </div>
+              </div>
+
+              <div className="market-stat">
+                <div className="market-stat-icon">NW</div>
+                <div>
+                  <small>Listing Hari Ini</small>
+                  <strong>{listings.length}</strong>
+                  <span>Barang tersedia</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="section-head">
+              <div className="section-title">
+                <h2>Lelang Pilihan</h2>
+                <span>{visibleListings.length} Aktif</span>
+              </div>
+              <button type="button" className="view-all" onClick={() => setCategory("Semua")}>
+                Lihat Semua -&gt;
+              </button>
+            </div>
+
+            {loading ? (
+              <div className="empty-market">
+                <div>
+                  <div className="empty-market-icon">...</div>
+                  <h3>Memuat listing...</h3>
+                  <p>Sistem sedang mengambil data PasarCuan.</p>
+                </div>
+              </div>
+            ) : visibleListings.length === 0 ? (
+              <div className="empty-market">
+                <div>
+                  <div className="empty-market-icon">0</div>
+                  <h3>Belum ada listing yang cocok</h3>
+                  <p>Ubah filter pencarian atau jadilah pengguna pertama yang menjual barang bernilai di PasarCuan.</p>
+                  <button type="button" className="market-primary-btn" onClick={() => router.push("/bid/new")}>
+                    + Jual Barang
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="listing-grid">
+                {visibleListings.map((item) => {
+                  const currentPrice = toNumber(item.currentPrice)
+                  const nextPrice = currentPrice + toNumber(item.priceStep)
+                  const max = toNumber(item.maxPrice)
+                  const min = toNumber(item.minPrice)
+                  const isOwner = Boolean(session?.user?.name && item.sellerName === session.user.name)
+                  const isFull = nextPrice > max
+                  const itemCategory = getCategory(item)
+
+                  return (
+                    <article key={item.id} className="listing-card" onClick={() => router.push("/bid/" + item.id)}>
+                      <div className="listing-media">
+                        {item.photoUrl ? (
+                          <img src={item.photoUrl} alt={item.title} />
+                        ) : (
+                          <div className="listing-fallback">
+                            <MiniIcon name={itemCategory} />
+                          </div>
+                        )}
+                        <span className="listing-badge">{itemCategory}</span>
+                        <button type="button" className="love-btn" onClick={(event) => event.stopPropagation()} aria-label="Simpan listing">
+                          Save
+                        </button>
+                      </div>
+
+                      <div className="listing-body">
+                        <div className="listing-title-row">
+                          <h3>{item.title}</h3>
+                          <span className="verified">OK</span>
+                        </div>
+
+                        <span className="seller">oleh {item.sellerName || "Pengguna CuanSampah"}</span>
+
+                        <div className="price-label">Harga Saat Ini</div>
+                        <div className="price">{rupiah(currentPrice)}</div>
+                        <div className="price-sub">
+                          <span>Min. {rupiah(min)}</span>
+                          <span>{toNumber(item.bidCount)} bid</span>
+                        </div>
+
+                        <div className="progress-track">
+                          <div className="progress-fill" style={{ width: `${calcProgress(item)}%` }} />
+                        </div>
+
+                        <div className="listing-foot">
+                          <span className="time-pill">Time {getTimeLeft(item.expiresAt)}</span>
+
+                          {!isOwner && !isFull && (
+                            <button
+                              type="button"
+                              className="bid-btn"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                void placeBid(item.id)
+                              }}
+                            >
+                              Bid Sekarang
+                            </button>
+                          )}
+
+                          {isFull && <button type="button" className="sold-btn">Terjual</button>}
+                          {isOwner && <button type="button" className="owner-btn">Listing kamu</button>}
+                        </div>
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
+            )}
+
+            <div className="market-benefits">
+              <div className="benefit-item">
+                <span className="benefit-icon">E</span>
+                <div>
+                  <strong>Kenapa belanja di PasarCuan?</strong>
+                  <span>Baca selengkapnya</span>
+                </div>
+              </div>
+              <div className="benefit-item">
+                <span className="benefit-icon">Rp</span>
+                <div>
+                  <strong>Harga kompetitif</strong>
+                  <span>Dari sesama pengguna</span>
+                </div>
+              </div>
+              <div className="benefit-item">
+                <span className="benefit-icon">S</span>
+                <div>
+                  <strong>Transaksi aman</strong>
+                  <span>Sistem lelang transparan</span>
+                </div>
+              </div>
+              <div className="benefit-item">
+                <span className="benefit-icon">U</span>
+                <div>
+                  <strong>Komunitas terpercaya</strong>
+                  <span>Pengguna terverifikasi</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <aside className="market-sidebar">
+            <div className="market-side-card">
+              <h2 className="panel-title">Trending Minggu Ini</h2>
+              {topListings.length === 0 ? (
+                <p className="side-meta">Belum ada barang trending.</p>
+              ) : (
+                topListings.map((item, index) => (
+                  <div key={item.id} className="trending-row">
+                    <span className="rank">{index + 1}</span>
+                    {item.photoUrl ? (
+                      <img className="thumb" src={item.photoUrl} alt={item.title} />
+                    ) : (
+                      <span className="thumb-fallback"><MiniIcon name={getCategory(item)} /></span>
+                    )}
+                    <div>
+                      <span className="side-name">{item.title}</span>
+                      <span className="side-price">{rupiah(item.currentPrice)}</span>
+                      <span className="side-meta">{toNumber(item.bidCount)} bid</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="market-side-card">
+              <h2 className="panel-title">Bagaimana PasarCuan bekerja?</h2>
+              <div className="how-step">
+                <span className="step-number">1</span>
+                <div>
+                  <strong>Buat atau ikuti lelang</strong>
+                  <span>Pasang barangmu atau cari material bernilai dari pengguna lain.</span>
+                </div>
+              </div>
+              <div className="how-step">
+                <span className="step-number">2</span>
+                <div>
+                  <strong>Penawaran masuk</strong>
+                  <span>Harga naik bertahap sesuai bid yang diberikan.</span>
+                </div>
+              </div>
+              <div className="how-step">
+                <span className="step-number">3</span>
+                <div>
+                  <strong>Lelang selesai</strong>
+                  <span>Pemenang membayar dan mengambil barang sesuai kesepakatan.</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="market-side-card">
+              <h2 className="panel-title">Aktivitas Terbaru</h2>
+              {latestActivity.length === 0 ? (
+                <p className="side-meta">Belum ada aktivitas terbaru.</p>
+              ) : (
+                latestActivity.map((item) => (
+                  <div key={item.id} className="activity-row">
+                    {item.photoUrl ? (
+                      <img className="thumb" src={item.photoUrl} alt={item.title} />
+                    ) : (
+                      <span className="thumb-fallback"><MiniIcon name={getCategory(item)} /></span>
+                    )}
+                    <div>
+                      <span className="side-name">{item.sellerName || "Pengguna"} menawarkan</span>
+                      <span className="side-price">{rupiah(item.currentPrice)}</span>
+                      <span className="side-meta">{item.title}</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </aside>
+        </section>
+      </main>
+    </>
+  )
+}

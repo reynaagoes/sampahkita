@@ -1,0 +1,165 @@
+﻿"use client"
+
+import BrandLogo from "@/components/BrandLogo"
+import { signIn } from "next-auth/react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { FormEvent, useState } from "react"
+
+export default function LoginPage() {
+  const router = useRouter()
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setLoading(true)
+    setError("")
+
+    const res = await signIn("credentials", { email, password, redirect: false })
+
+    if (res?.error) {
+      setError("Email atau password salah")
+      setLoading(false)
+      return
+    }
+
+    const session = await fetch("/api/auth/session").then((response) => response.json())
+    const role = session?.user?.role
+
+    if (role === "HOUSEHOLD") router.push("/household")
+    else if (role === "COLLECTOR") router.push("/collector")
+    else if (role === "RECYCLER") router.push("/recycler")
+    else if (role === "ADMIN") router.push("/admin")
+    else router.push("/")
+  }
+
+  return (
+    <main className="login-page">
+      <nav className="login-nav">
+        <BrandLogo href="/login" dark />
+        <div className="login-nav-links">
+          <a href="#beranda">Beranda</a>
+          <a href="#cara-kerja">Cara Kerja</a>
+          <a href="#dampak">Dampak</a>
+          <Link href="/register" className="login-register-link">Daftar Gratis</Link>
+        </div>
+      </nav>
+
+      <section className="login-hero" id="beranda">
+        <div className="login-copy">
+          <span className="retro-kicker">Platform Ekonomi Sirkular Indonesia</span>
+          <h1>
+            Gratis Angkut Sampah.
+            <span>Kami datang ke rumahmu.</span>
+          </h1>
+          <p>
+            CuanSampah membantu rumah tangga menjadwalkan penjemputan sampah gratis,
+            mengumpulkan poin, dan memberi nilai lebih pada barang sisa.
+          </p>
+
+          <div className="login-feature-list">
+            <div className="login-feature-card">
+              <span className="classic-icon">TRK</span>
+              <div>
+                <strong>Angkut Sampah Gratis</strong>
+                <small>Jadwalkan penjemputan dari rumah tanpa biaya.</small>
+              </div>
+            </div>
+            <div className="login-feature-card">
+              <span className="classic-icon gold">PTS</span>
+              <div>
+                <strong>Kumpulkan Poin</strong>
+                <small>Setiap penjemputan memberi nilai dan dampak.</small>
+              </div>
+            </div>
+            <div className="login-feature-card">
+              <span className="classic-icon">PAS</span>
+              <div>
+                <strong>PasarCuan sebagai Tambahan</strong>
+                <small>Jual barang layak pakai atau material daur ulang.</small>
+              </div>
+            </div>
+          </div>
+
+          <div className="login-stamp-row">
+            <span className="stamp-box">Gratis Angkut di Rumahmu</span>
+            <span className="stamp-note">Terdaftar dan diawasi komunitas untuk lingkungan Indonesia.</span>
+          </div>
+        </div>
+
+        <div className="login-visual-panel">
+          <div className="retro-scene">
+            <div className="scene-sun" />
+            <div className="scene-house">
+              <div className="house-roof" />
+              <div className="house-body">
+                <span />
+                <span />
+              </div>
+            </div>
+            <div className="scene-truck">
+              <div className="truck-box">CS</div>
+              <div className="truck-cab" />
+              <span className="wheel one" />
+              <span className="wheel two" />
+            </div>
+            <div className="scene-person" />
+            <div className="scene-bin">Cuan</div>
+            <div className="paper-stamp">100% GRATIS</div>
+          </div>
+
+          <form className="login-card" onSubmit={handleSubmit}>
+            <BrandLogo href="/login" compact />
+            <div className="login-card-head">
+              <h2>Masuk ke CuanSampah</h2>
+              <p>Belum punya akun? <Link href="/register">Daftar gratis</Link></p>
+            </div>
+
+            {error && <div className="form-error">{error}</div>}
+
+            <label className="form-field">
+              <span>Email</span>
+              <input
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="nama@email.com"
+                required
+              />
+            </label>
+
+            <label className="form-field">
+              <span>Password</span>
+              <input
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Masukkan password"
+                required
+              />
+            </label>
+
+            <button className="primary-classic-btn" type="submit" disabled={loading}>
+              {loading ? "Memverifikasi..." : "Masuk"}
+            </button>
+
+            <div className="login-mini-links">
+              <Link href="/forgot-password">Lupa password?</Link>
+              <Link href="/register">Buat akun</Link>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section className="login-stats">
+        <div><strong>5.2rb+</strong><span>poin terkumpul</span></div>
+        <div><strong>1.2rb kg</strong><span>CO2 dicegah</span></div>
+        <div><strong>248</strong><span>transaksi</span></div>
+        <div><strong>3</strong><span>jenis pengguna</span></div>
+      </section>
+    </main>
+  )
+}

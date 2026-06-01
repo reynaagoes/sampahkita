@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { CSSProperties, FormEvent, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import Navbar from "@/components/Navbar"
@@ -19,12 +19,12 @@ export default function NewBatchPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
-  function handleTypeChange(type) {
+  function handleTypeChange(type: string) {
     const found = WASTE_TYPES.find(w => w.id === type)
     setForm({ ...form, wasteType: type, pricePerKg: String(found ? found.price : 2000) })
   }
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setLoading(true)
     setError("")
@@ -39,7 +39,7 @@ export default function NewBatchPage() {
   }
 
   const totalValue = parseFloat(form.totalWeight || "0") * parseInt(form.pricePerKg || "0")
-  const S = { input: {width:"100%",padding:"10px 14px",borderRadius:"6px",border:"1px solid #e5e7eb",fontSize:"13px",outline:"none",boxSizing:"border-box",color:"#111"} }
+  const S: Record<"input", CSSProperties> = { input: {width:"100%",padding:"10px 14px",borderRadius:"6px",border:"1px solid #e5e7eb",fontSize:"13px",outline:"none",boxSizing:"border-box",color:"#111"} }
 
   return (
     <div style={{minHeight:"100vh",background:"#f9fafb"}}>
@@ -100,7 +100,7 @@ export default function NewBatchPage() {
               </div>
               <div style={{fontSize:"11px",color:"#9ca3af",textAlign:"right"}}>
                 <div>{form.totalWeight} kg</div>
-                <div>x Rp {parseInt(form.pricePerKg||0).toLocaleString("id-ID")}/kg</div>
+                <div>x Rp {parseInt(form.pricePerKg || "0").toLocaleString("id-ID")}/kg</div>
               </div>
             </div>
           )}

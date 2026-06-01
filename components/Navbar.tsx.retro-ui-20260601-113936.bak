@@ -1,0 +1,209 @@
+﻿"use client"
+
+import { signOut } from "next-auth/react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { useEffect, useState } from "react"
+
+const ROLE_LABEL: Record<string, string> = {
+  HOUSEHOLD: "Rumah Tangga",
+  COLLECTOR: "Pengepul",
+  RECYCLER: "Recycler",
+  ADMIN: "Admin",
+}
+
+type NavbarProps = {
+  userName?: string | null
+  role?: string | null
+}
+
+type NotificationItem = {
+  id: string
+  title: string
+  message: string
+  isRead: boolean
+  createdAt: string
+}
+
+function ExchangeLogo() {
+  return (
+    <Link href="/" className="cs-brand" aria-label="CuanSampah">
+      <span className="cs-brand-mark" aria-hidden="true">
+        <svg className="cs-logo-svg" viewBox="0 0 52 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 11.4L15.2 3H36.5L43.5 9.4L35.6 16.8H15.2L6 11.4Z" fill="#16A34A" />
+          <path d="M38.5 4H47.8L42.9 13.2L38.5 4Z" fill="#16A34A" />
+          <path d="M46 22.6L36.8 31H15.5L8.5 24.6L16.4 17.2H36.8L46 22.6Z" fill="#0F172A" />
+          <path d="M13.5 30H4.2L9.1 20.8L13.5 30Z" fill="#0F172A" />
+          <path d="M17 17.2H34.7" stroke="white" strokeOpacity="0.72" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </span>
+      <span className="cs-brand-word">
+        <span>Cuan</span>
+        <span className="green">Sampah</span>
+      </span>
+    </Link>
+  )
+}
+
+function HomeIcon() {
+  return (
+    <svg className="cs-nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M3 11.2L12 4l9 7.2v8.3a1.5 1.5 0 0 1-1.5 1.5h-4.2v-5.7H8.7V21H4.5A1.5 1.5 0 0 1 3 19.5v-8.3Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function StoreIcon() {
+  return (
+    <svg className="cs-nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M5 10.5V20h14v-9.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M4 4h16l1 5H3l1-5Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M8 14h8M8 17h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function BellIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M18 8.2a6 6 0 0 0-12 0c0 7-3 6.8-3 8.8h18c0-2-3-.8-3-8.8Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M9.8 20a2.4 2.4 0 0 0 4.4 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function LogoutIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M14 7V5.5A1.5 1.5 0 0 0 12.5 4h-6A1.5 1.5 0 0 0 5 5.5v13A1.5 1.5 0 0 0 6.5 20h6a1.5 1.5 0 0 0 1.5-1.5V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M10 12h10m0 0-3-3m3 3-3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+export default function Navbar({ userName, role }: NavbarProps) {
+  const pathname = usePathname()
+  const [notifs, setNotifs] = useState<NotificationItem[]>([])
+  const [showNotif, setShowNotif] = useState(false)
+
+  const dashPath =
+    role === "COLLECTOR"
+      ? "/collector"
+      : role === "RECYCLER"
+        ? "/recycler"
+        : role === "ADMIN"
+          ? "/admin"
+          : "/household"
+
+  useEffect(() => {
+    void fetchNotifs()
+    const interval = setInterval(() => void fetchNotifs(), 30000)
+    return () => clearInterval(interval)
+  }, [])
+
+  async function fetchNotifs() {
+    try {
+      const res = await fetch("/api/notifications")
+      const data = (await res.json()) as { notifications?: NotificationItem[] }
+      setNotifs(data.notifications || [])
+    } catch {
+      setNotifs([])
+    }
+  }
+
+  async function markRead(id: string) {
+    await fetch("/api/notifications/" + id, { method: "PATCH" })
+    await fetchNotifs()
+  }
+
+  async function markAllRead() {
+    await fetch("/api/notifications", { method: "PATCH" })
+    await fetchNotifs()
+  }
+
+  const unread = notifs.filter((n) => !n.isRead).length
+
+  return (
+    <header className="cs-navbar">
+      <div className="cs-navbar-inner">
+        <ExchangeLogo />
+
+        <span className="cs-navbar-divider" />
+
+        <nav className="cs-nav-center" aria-label="Navigasi utama">
+          <Link href={dashPath} className={`cs-nav-link ${pathname === dashPath ? "is-active" : ""}`}>
+            <HomeIcon />
+            {role ? ROLE_LABEL[role] || role : "Dashboard"}
+          </Link>
+
+          <Link href="/bid" className={`cs-nav-link ${pathname.startsWith("/bid") ? "is-active" : ""}`}>
+            <StoreIcon />
+            PasarCuan
+          </Link>
+        </nav>
+
+        <div className="cs-nav-actions">
+          {userName && (
+            <span className="cs-user-greeting">
+              Halo, <strong>{userName.split(" ")[0]}</strong>
+            </span>
+          )}
+
+          <div className="cs-notif-wrap">
+            <button
+              type="button"
+              className="cs-icon-btn"
+              onClick={() => setShowNotif((value) => !value)}
+              aria-label="Buka notifikasi"
+            >
+              <BellIcon />
+              {unread > 0 && <span className="cs-badge">{unread}</span>}
+            </button>
+
+            {showNotif && (
+              <div className="cs-notif-panel">
+                <div className="cs-notif-head">
+                  <strong>Notifikasi</strong>
+                  {unread > 0 && (
+                    <button type="button" className="cs-mark-read" onClick={() => void markAllRead()}>
+                      Tandai semua dibaca
+                    </button>
+                  )}
+                </div>
+
+                {notifs.length === 0 ? (
+                  <div className="cs-notif-empty">Tidak ada notifikasi</div>
+                ) : (
+                  notifs.map((notif) => (
+                    <button
+                      key={notif.id}
+                      type="button"
+                      className={`cs-notif-item ${notif.isRead ? "" : "unread"}`}
+                      onClick={() => void markRead(notif.id)}
+                    >
+                      <span className="cs-notif-title">
+                        {notif.title}
+                        {!notif.isRead && <span className="cs-notif-dot" />}
+                      </span>
+                      <span className="cs-notif-msg">{notif.message}</span>
+                      <span className="cs-notif-date">{new Date(notif.createdAt).toLocaleString("id-ID")}</span>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="cs-logout-btn"
+            onClick={() => void signOut({ callbackUrl: "/login" })}
+          >
+            Keluar
+            <LogoutIcon />
+          </button>
+        </div>
+      </div>
+    </header>
+  )
+}

@@ -77,28 +77,37 @@ export default function HouseholdDashboard() {
 
         <section className="household-hero">
           <div>
-            <span className="section-kicker">Dashboard Rumah Tangga</span>
+            <span className="retro-kicker">Dashboard Rumah Tangga</span>
             <h1>Selamat datang kembali, <span>{firstName}!</span></h1>
             <p>Kelola sampahmu, jadwalkan angkut gratis, lalu kumpulkan poin bersama CuanSampah.</p>
           </div>
 
-          <div className="hero-service-note">
-            <strong>Gratis</strong>
-            <span>Penjemputan sampah dari rumah</span>
+          <div className="hero-house-illustration" aria-hidden="true">
+            <div className="mini-house-roof" />
+            <div className="mini-house-body" />
+            <div className="mini-tree" />
+            <div className="mini-recycle-badge">CS</div>
           </div>
         </section>
       </div>
 
       <section className="dashboard-container">
         <div className="pickup-banner">
+          <div className="pickup-truck" aria-hidden="true">
+            <div className="pickup-paper" />
+            <div className="pickup-car">
+              <span>CS</span>
+            </div>
+          </div>
           <div>
-            <span className="free-label">LAYANAN UTAMA</span>
-            <h2>Request Angkut Sampah Gratis</h2>
+            <span className="free-label">GRATIS</span>
+            <h2>Buat Request Angkut Gratis</h2>
             <p>Kami datang ke rumahmu. Cukup pilih jadwal dan jenis sampah.</p>
           </div>
-          <button className="pickup-action-btn" type="button" onClick={() => router.push("/household/request/new")}>
-            Buat Request
+          <button className="orange-btn" type="button" onClick={() => router.push("/household/request/new")}>
+            + Buat Request Angkut Gratis
           </button>
+          <div className="ticket-stamp" aria-hidden="true">100% GRATIS<br />DI RUMAHMU</div>
         </div>
 
         <div className="stat-grid">
@@ -137,8 +146,8 @@ export default function HouseholdDashboard() {
             </div>
 
             {requests.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-icon">+</div>
+              <div className="empty-retro">
+                <div className="empty-icon">TRK</div>
                 <h3>Belum ada jadwal penjemputan</h3>
                 <p>Buat request pertama untuk menikmati layanan gratis angkut sampah.</p>
               </div>
@@ -167,7 +176,7 @@ export default function HouseholdDashboard() {
           <aside className="dashboard-side">
             <div className="classic-panel side-impact">
               <h2>Dampakmu untuk Bumi</h2>
-              <div className="impact-circle" aria-hidden="true"><span /></div>
+              <div className="earth-illustration" aria-hidden="true">CS</div>
               <ul>
                 <li><span>Sampah terkumpul</span><strong>{totalWeight.toFixed(1)} kg</strong></li>
                 <li><span>CO2 dicegah</span><strong>{co2} kg</strong></li>
@@ -184,6 +193,9 @@ export default function HouseholdDashboard() {
           </aside>
         </section>
 
+        <section className="classic-footer-note">
+          <span>Bersama membangun Indonesia sirkular.</span>
+        </section>
       </section>
     </main>
   )

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 
-export async function PATCH(req, { params }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
     await pool.execute("UPDATE notifications SET isRead = true WHERE id = ?", [id])

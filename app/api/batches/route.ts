@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import pool from "@/lib/db"
 import { v4 as uuidv4 } from "uuid"
 
-export async function POST(req) {
+export async function POST(req: Request) {
   try {
     const session = await getServerSession()
     if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

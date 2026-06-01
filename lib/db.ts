@@ -10,4 +10,8 @@ const pool = mysql.createPool({
   connectionLimit: 10,
 })
 
-export default pool
+type AppPool = Omit<typeof pool, "execute"> & {
+  execute(sql: string, values?: unknown): Promise<[any[], unknown]>
+}
+
+export default pool as AppPool

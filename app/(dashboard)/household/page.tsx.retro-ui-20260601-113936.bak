@@ -1,0 +1,131 @@
+"use client"
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import Navbar from "@/components/Navbar"
+
+const STATUS = {
+  OPEN:      { label: "Menunggu Pengepul", dot: "#f59e0b" },
+  ASSIGNED:  { label: "Dalam Perjalanan",  dot: "#3b82f6" },
+  PICKED_UP: { label: "Sedang Diproses",   dot: "#8b5cf6" },
+  COMPLETED: { label: "Selesai",           dot: "#16a34a" },
+  CANCELLED: { label: "Dibatalkan",        dot: "#ef4444" },
+}
+
+export default function HouseholdDashboard() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
+  const [requests, setRequests] = useState([])
+  const [points, setPoints] = useState(0)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => { if (status === "unauthenticated") router.push("/login") }, [status, router])
+  useEffect(() => {
+    if (status !== "authenticated") return
+    Promise.all([
+      fetch("/api/requests").then(r => r.json()),
+      fetch("/api/points").then(r => r.json()),
+    ]).then(([req, pt]) => {
+      setRequests(req.requests || [])
+      setPoints(pt.total || 0)
+      setLoading(false)
+    })
+  }, [status])
+
+  if (status === "loading") return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"13px",color:"#9ca3af"}}>Memuat...</div>
+
+  const active = requests.filter(r => ["OPEN","ASSIGNED","PICKED_UP"].includes(r.status)).length
+  const done = requests.filter(r => r.status === "COMPLETED").length
+  const co2 = (done * 2.5).toFixed(1)
+
+  return (
+    <div style={{minHeight:"100vh",background:"#f9fafb"}}>
+      <div style={{background:"#0f2d13",padding:"28px 24px 60px",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,opacity:0.04}}>
+          {["♻","🌿","🏠","♻","🌱","🏠","♻","🌿"].map((e,i) => (
+            <span key={i} style={{position:"absolute",fontSize: i%2===0?"80px":"50px",top: (i*13)%80+"%",left: (i*15)%90+"%",transform:"rotate("+(i*23)+"deg)"}}>{e}</span>
+          ))}
+        </div>
+        <Navbar userName={session?.user?.name || ""} role="HOUSEHOLD" />
+        <div style={{maxWidth:"860px",margin:"24px auto 0",position:"relative",zIndex:1}}>
+          <div style={{display:"inline-block",border:"1px solid rgba(134,239,172,0.3)",color:"#86efac",fontSize:"10px",padding:"3px 10px",borderRadius:"20px",fontWeight:"600",marginBottom:"12px",letterSpacing:"1px"}}>DASHBOARD RUMAH TANGGA</div>
+          <h1 style={{color:"#fff",fontSize:"28px",fontWeight:"700",marginBottom:"4px",letterSpacing:"-0.5px"}}>Halo, {session?.user?.name?.split(" ")[0]}!</h1>
+          <p style={{color:"#6b7280",fontSize:"13px"}}>Kelola sampahmu dan kumpulkan poin bersama CuanSampah</p>
+        </div>
+      </div>
+
+      <div style={{maxWidth:"860px",margin:"-32px auto 0",padding:"0 24px 32px",position:"relative",zIndex:2}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"12px",marginBottom:"20px"}}>
+          {[
+            { label: "TOTAL POIN", value: Number(points).toLocaleString("id-ID"), sub: "poin terkumpul", accent: true },
+            { label: "REQUEST AKTIF", value: active, sub: "menunggu pengepul", accent: false },
+            { label: "TOTAL SELESAI", value: done, sub: "pengambilan", accent: false },
+          ].map(s => (
+            <div key={s.label} style={{background:"#fff",borderRadius:"10px",padding:"16px 18px",border:"1px solid #e5e7eb",borderLeft: s.accent ? "3px solid #16a34a" : "1px solid #e5e7eb",boxShadow:"0 1px 3px rgba(0,0,0,0.06)"}}>
+              <div style={{fontSize:"10px",fontWeight:"700",color:"#9ca3af",letterSpacing:"0.8px",marginBottom:"8px"}}>{s.label}</div>
+              <div style={{fontSize:"26px",fontWeight:"700",color:"#111",lineHeight:"1",marginBottom:"3px"}}>{s.value}</div>
+              <div style={{fontSize:"11px",color:"#9ca3af"}}>{s.sub}</div>
+            </div>
+          ))}
+        </div>
+
+        {parseFloat(co2) > 0 && (
+          <div style={{background:"#0f2d13",borderRadius:"10px",padding:"16px 20px",marginBottom:"20px",display:"flex",justifyContent:"space-between",alignItems:"center",border:"1px solid rgba(134,239,172,0.1)"}}>
+            <div>
+              <div style={{fontSize:"10px",fontWeight:"700",color:"#86efac",letterSpacing:"1px",marginBottom:"4px"}}>DAMPAK LINGKUNGANMU</div>
+              <div style={{fontSize:"20px",fontWeight:"700",color:"#fff",marginBottom:"2px"}}>{co2} kg CO2 diselamatkan</div>
+              <div style={{fontSize:"11px",color:"#6b7280"}}>kontribusi nyata untuk lingkungan bulan ini</div>
+            </div>
+            <div style={{fontSize:"36px",opacity:0.8}}>🌍</div>
+          </div>
+        )}
+
+        <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:"10px",overflow:"hidden",boxShadow:"0 1px 3px rgba(0,0,0,0.04)"}}>
+          <div style={{padding:"14px 20px",borderBottom:"1px solid #f3f4f6",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div>
+              <div style={{fontSize:"13px",fontWeight:"700",color:"#111"}}>Request Sampah</div>
+              <div style={{fontSize:"11px",color:"#9ca3af",marginTop:"1px"}}>Riwayat permintaan penjemputan</div>
+            </div>
+            <button onClick={() => router.push("/household/request/new")}
+              style={{background:"#16a34a",color:"#fff",border:"none",padding:"8px 16px",borderRadius:"6px",fontSize:"12px",fontWeight:"600",cursor:"pointer"}}>
+              + Buat Request
+            </button>
+          </div>
+
+          {loading ? (
+            <div style={{padding:"40px",textAlign:"center",fontSize:"13px",color:"#9ca3af"}}>Memuat data...</div>
+          ) : requests.length === 0 ? (
+            <div style={{padding:"52px 20px",textAlign:"center"}}>
+              <div style={{width:"44px",height:"44px",background:"#f0fdf4",borderRadius:"10px",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px",fontSize:"20px"}}>🌱</div>
+              <p style={{fontSize:"13px",fontWeight:"700",color:"#374151",marginBottom:"4px"}}>Belum ada request</p>
+              <p style={{fontSize:"12px",color:"#9ca3af"}}>Buat request pertama untuk mulai mengumpulkan poin</p>
+            </div>
+          ) : (
+            <div>
+              {requests.map((req, i) => {
+                const types = JSON.parse(req.sampahTypes || "[]")
+                const s = STATUS[req.status] || STATUS.OPEN
+                return (
+                  <div key={req.id} style={{padding:"14px 20px",borderBottom: i < requests.length-1 ? "1px solid #f9fafb" : "none",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <div>
+                      <div style={{fontSize:"11px",color:"#9ca3af",marginBottom:"4px",textTransform:"capitalize"}}>{types.join(" / ")}</div>
+                      <div style={{fontSize:"13px",fontWeight:"600",color:"#111",marginBottom:"2px"}}>{req.addressDetail}</div>
+                      <div style={{fontSize:"11px",color:"#9ca3af"}}>
+                        {req.estimatedWeight ? "Est. " + req.estimatedWeight + " kg" : ""}
+                        {req.actualWeight ? " · Aktual " + req.actualWeight + " kg" : ""}
+                      </div>
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",gap:"5px",whiteSpace:"nowrap"}}>
+                      <div style={{width:"6px",height:"6px",borderRadius:"50%",background:s.dot}}></div>
+                      <span style={{fontSize:"11px",color:"#374151",fontWeight:"500"}}>{s.label}</span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}

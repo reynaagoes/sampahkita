@@ -126,24 +126,27 @@ export default function BidPage() {
   if (status === "loading") return <div className="page-loader">Memuat PasarCuan...</div>
 
   return (
-    <main className="app-page market-page">
-      <Navbar userName={session?.user?.name || ""} role={session?.user?.role} />
+    <main className="app-page market-page-classic">
+      <Navbar userName={session?.user?.name || ""} role="HOUSEHOLD" />
 
-      <section className="market-hero">
+      <section className="market-classic-hero">
         <div>
-          <span className="section-kicker">Fitur tambahan</span>
+          <span className="retro-kicker">Fitur Pendukung</span>
           <h1>PasarCuan</h1>
-          <p>Jual barang layak pakai atau material daur ulang dengan cara yang sederhana.</p>
+          <p>Jual barang layak pakai atau material daur ulang. Fokus utama tetap gratis angkut sampah dari rumah.</p>
         </div>
-        <div className="market-hero-note">
-          <strong>Layanan utama CuanSampah</strong>
-          <span>Tetap butuh penjemputan sampah?</span>
-          <button type="button" onClick={() => router.push("/household/request/new")}>Request angkut gratis</button>
+        <div className="market-stall" aria-hidden="true">
+          <div className="stall-roof" />
+          <div className="stall-table">
+            <span>BOTOL</span>
+            <span>BOX</span>
+            <span>BESI</span>
+          </div>
         </div>
       </section>
 
       <section className="market-toolbar classic-panel">
-        <label className="market-search">
+        <label className="classic-search">
           <span>Cari</span>
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cari barang, kategori, atau penjual..." />
         </label>
@@ -159,20 +162,28 @@ export default function BidPage() {
         ))}
       </section>
 
+      <section className="market-support-note">
+        <div>
+          <h2>PasarCuan hadir sebagai tambahan.</h2>
+          <p>Utamakan layanan angkut sampah gratis. PasarCuan membantu memberi nilai lebih pada barang yang masih layak.</p>
+        </div>
+        <button type="button" onClick={() => router.push("/household/request/new")}>Request Angkut Gratis</button>
+      </section>
+
       {loading ? (
-        <div className="empty-state classic-panel market-empty">
-          <div className="empty-icon">...</div>
+        <div className="empty-retro classic-panel">
+          <div className="empty-icon">LOAD</div>
           <h3>Memuat barang...</h3>
           <p>Sistem sedang mengambil data PasarCuan.</p>
         </div>
       ) : visibleListings.length === 0 ? (
-        <div className="empty-state classic-panel market-empty">
-          <div className="empty-icon">+</div>
+        <div className="empty-retro classic-panel">
+          <div className="empty-icon">CS</div>
           <h3>Belum ada barang yang cocok</h3>
           <p>Ubah filter atau tambahkan barang pertamamu.</p>
         </div>
       ) : (
-        <section className="market-grid">
+        <section className="market-grid-classic">
           {visibleListings.map((item) => {
             const itemCategory = getCategory(item)
             const nextPrice = toNumber(item.currentPrice) + toNumber(item.priceStep)

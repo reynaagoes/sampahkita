@@ -1,5 +1,6 @@
+
 "use client"
-import { useState } from "react"
+import { CSSProperties, MouseEvent, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import Navbar from "@/components/Navbar"
@@ -15,16 +16,16 @@ const WASTE_TYPES = [
 export default function NewRequestPage() {
   const { data: session } = useSession()
   const router = useRouter()
-  const [selectedTypes, setSelectedTypes] = useState([])
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([])
   const [form, setForm] = useState({ estimatedWeight: "", addressDetail: "", notes: "" })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
-  function toggleType(id) {
+  function toggleType(id: string) {
     setSelectedTypes(prev => prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id])
   }
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: MouseEvent<HTMLButtonElement>) {
     e.preventDefault()
     if (selectedTypes.length === 0) { setError("Pilih minimal satu jenis sampah"); return }
     setLoading(true)
@@ -40,7 +41,7 @@ export default function NewRequestPage() {
   }
 
   const estPoints = selectedTypes.reduce((sum, t) => sum + (WASTE_TYPES.find(w => w.id === t)?.poin || 0), 0) * (parseFloat(form.estimatedWeight) || 1)
-  const S = { input: {width:"100%",padding:"10px 14px",borderRadius:"6px",border:"1px solid #e5e7eb",fontSize:"13px",outline:"none",boxSizing:"border-box",color:"#111"} }
+  const S: Record<"input", CSSProperties> = { input: {width:"100%",padding:"10px 14px",borderRadius:"6px",border:"1px solid #e5e7eb",fontSize:"13px",outline:"none",boxSizing:"border-box",color:"#111"} }
 
   return (
     <div style={{minHeight:"100vh",background:"#f9fafb"}}>

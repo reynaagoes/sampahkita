@@ -4,12 +4,33 @@ import { useRouter, useParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import Navbar from "@/components/Navbar"
 
+type Listing = {
+  title: string
+  sellerName: string
+  description?: string | null
+  photoUrl?: string | null
+  bidCount?: number | string
+  currentPrice: number | string
+  minPrice: number | string
+  maxPrice: number | string
+  priceStep: number | string
+  status: string
+  expiresAt: string
+}
+
+type BidHistoryItem = {
+  id: string
+  bidderName: string
+  createdAt: string
+  amount: number | string
+}
+
 export default function BidDetailPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const params = useParams()
-  const [listing, setListing] = useState(null)
-  const [bidHistory, setBidHistory] = useState([])
+  const params = useParams<{ id: string }>()
+  const [listing, setListing] = useState<Listing | null>(null)
+  const [bidHistory, setBidHistory] = useState<BidHistoryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [bidding, setBidding] = useState(false)
 
@@ -32,8 +53,8 @@ export default function BidDetailPage() {
     setBidding(false)
   }
 
-  function getTimeLeft(expiresAt) {
-    const diff = new Date(expiresAt) - new Date()
+  function getTimeLeft(expiresAt: string) {
+    const diff = new Date(expiresAt).getTime() - Date.now()
     if (diff <= 0) return "Berakhir"
     const h = Math.floor(diff / 3600000)
     const m = Math.floor((diff % 3600000) / 60000)
@@ -44,9 +65,9 @@ export default function BidDetailPage() {
   if (!listing) return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"13px",color:"#9ca3af"}}>Listing tidak ditemukan</div>
 
   const isOwner = session?.user?.name === listing.sellerName
-  const nextPrice = listing.currentPrice + listing.priceStep
-  const isFull = nextPrice > listing.maxPrice
-  const progress = Math.round(((listing.currentPrice - listing.minPrice) / (listing.maxPrice - listing.minPrice)) * 100)
+  const nextPrice = Number(listing.currentPrice) + Number(listing.priceStep)
+  const isFull = nextPrice > Number(listing.maxPrice)
+  const progress = Math.round(((Number(listing.currentPrice) - Number(listing.minPrice)) / (Number(listing.maxPrice) - Number(listing.minPrice))) * 100)
 
   return (
     <div style={{minHeight:"100vh",background:"#f9fafb"}}>
@@ -74,13 +95,13 @@ export default function BidDetailPage() {
                   <span style={{fontSize:"11px",color:"#9ca3af"}}>Harga saat ini</span>
                   <span style={{fontSize:"11px",color:"#16a34a",fontWeight:"600"}}>{listing.bidCount} bid</span>
                 </div>
-                <div style={{fontSize:"26px",fontWeight:"700",color:"#111",marginBottom:"8px"}}>Rp {parseInt(listing.currentPrice).toLocaleString("id-ID")}</div>
+                <div style={{fontSize:"26px",fontWeight:"700",color:"#111",marginBottom:"8px"}}>Rp {Number(listing.currentPrice).toLocaleString("id-ID")}</div>
                 <div style={{height:"5px",background:"#e5e7eb",borderRadius:"3px",overflow:"hidden",marginBottom:"4px"}}>
                   <div style={{height:"100%",width: progress + "%",background:"#16a34a",borderRadius:"3px"}}></div>
                 </div>
                 <div style={{display:"flex",justifyContent:"space-between"}}>
-                  <span style={{fontSize:"10px",color:"#9ca3af"}}>Min: Rp {parseInt(listing.minPrice).toLocaleString("id-ID")}</span>
-                  <span style={{fontSize:"10px",color:"#9ca3af"}}>Max: Rp {parseInt(listing.maxPrice).toLocaleString("id-ID")}</span>
+                  <span style={{fontSize:"10px",color:"#9ca3af"}}>Min: Rp {Number(listing.minPrice).toLocaleString("id-ID")}</span>
+                  <span style={{fontSize:"10px",color:"#9ca3af"}}>Max: Rp {Number(listing.maxPrice).toLocaleString("id-ID")}</span>
                 </div>
               </div>
 
@@ -118,7 +139,7 @@ export default function BidDetailPage() {
                       <p style={{fontSize:"11px",color:"#9ca3af"}}>{new Date(bid.createdAt).toLocaleString("id-ID")}</p>
                     </div>
                   </div>
-                  <div style={{fontSize:"14px",fontWeight:"700",color: i===0 ? "#16a34a" : "#374151"}}>Rp {parseInt(bid.amount).toLocaleString("id-ID")}</div>
+                  <div style={{fontSize:"14px",fontWeight:"700",color: i===0 ? "#16a34a" : "#374151"}}>Rp {Number(bid.amount).toLocaleString("id-ID")}</div>
                 </div>
               ))}
             </div>

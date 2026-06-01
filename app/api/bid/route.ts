@@ -21,7 +21,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req) {
+export async function POST(req: Request) {
   try {
     const session = await getServerSession()
     if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -32,13 +32,13 @@ export async function POST(req) {
     const formData = await req.formData()
     const title = formData.get("title")
     const description = formData.get("description")
-    const minPrice = parseInt(formData.get("minPrice"))
-    const maxPrice = parseInt(formData.get("maxPrice"))
-    const priceStep = parseInt(formData.get("priceStep"))
+    const minPrice = parseInt(String(formData.get("minPrice") || "0"))
+    const maxPrice = parseInt(String(formData.get("maxPrice") || "0"))
+    const priceStep = parseInt(String(formData.get("priceStep") || "0"))
     const photo = formData.get("photo")
 
     let photoUrl = null
-    if (photo && photo.size > 0) {
+    if (photo instanceof File && photo.size > 0) {
       const bytes = await photo.arrayBuffer()
       const buffer = Buffer.from(bytes)
       const filename = uuidv4() + "-" + photo.name.replace(/[^a-zA-Z0-9.]/g, "")

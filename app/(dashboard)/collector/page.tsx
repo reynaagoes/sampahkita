@@ -1,170 +1,166 @@
 "use client"
+
+import Navbar from "@/components/Navbar"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import Navbar from "@/components/Navbar"
 
-function PickupCard({ req, onComplete }) {
+type PickupRequest = {
+  id: string
+  sampahTypes?: string | null
+  addressDetail?: string | null
+  householdName?: string | null
+  status: string
+  actualWeight?: number | string | null
+  estimatedWeight?: number | string | null
+}
+
+function getTypes(req: PickupRequest) {
+  try {
+    return JSON.parse(req.sampahTypes || "[]").join(" / ") || "Sampah rumah tangga"
+  } catch {
+    return "Sampah rumah tangga"
+  }
+}
+
+function PickupCard({ req, onComplete }: { req: PickupRequest; onComplete: (id: string, weight: string) => Promise<void> }) {
   const [weight, setWeight] = useState("")
-  const types = JSON.parse(req.sampahTypes || "[]")
+
   return (
-    <div style={{padding:"14px 20px",borderBottom:"1px solid #f9fafb"}}>
-      <div style={{fontSize:"11px",color:"#9ca3af",marginBottom:"4px",textTransform:"capitalize"}}>{types.join(" / ")}</div>
-      <div style={{fontSize:"13px",fontWeight:"600",color:"#111",marginBottom:"2px"}}>{req.addressDetail}</div>
-      <div style={{fontSize:"11px",color:"#9ca3af",marginBottom:"10px"}}>Dari: {req.householdName}</div>
-      {req.status !== "COMPLETED" ? (
-        <div style={{display:"flex",gap:"8px"}}>
-          <input type="number" placeholder="Berat aktual (kg)" value={weight} onChange={e => setWeight(e.target.value)}
-            style={{flex:1,padding:"8px 12px",borderRadius:"5px",border:"1px solid #e5e7eb",fontSize:"12px",outline:"none"}} />
-          <button onClick={() => onComplete(req.id, weight)} disabled={!weight}
-            style={{padding:"8px 14px",borderRadius:"5px",border:"none",background:weight?"#16a34a":"#e5e7eb",color:weight?"#fff":"#9ca3af",fontSize:"12px",fontWeight:"600",cursor:weight?"pointer":"not-allowed"}}>
-            Selesaikan
+    <article className="data-row">
+      <div className="data-row-copy">
+        <span className="data-eyebrow">{getTypes(req)}</span>
+        <h3>{req.addressDetail || "Alamat penjemputan"}</h3>
+        <p>Dari {req.householdName || "Rumah tangga"} {req.estimatedWeight ? `- estimasi ${req.estimatedWeight} kg` : ""}</p>
+      </div>
+      {req.status === "COMPLETED" ? (
+        <span className="status-pill success">Selesai - {req.actualWeight || 0} kg</span>
+      ) : (
+        <div className="row-actions collector-weight-actions">
+          <input type="number" value={weight} onChange={(event) => setWeight(event.target.value)} placeholder="Input berat (kg)" />
+          <button className="green-small-btn" type="button" disabled={!weight} onClick={() => void onComplete(req.id, weight)}>
+            Selesaikan Pickup
           </button>
         </div>
-      ) : (
-        <div style={{display:"flex",alignItems:"center",gap:"5px"}}>
-          <div style={{width:"5px",height:"5px",borderRadius:"50%",background:"#16a34a"}}></div>
-          <span style={{fontSize:"11px",color:"#374151",fontWeight:"500"}}>Selesai - {req.actualWeight} kg</span>
-        </div>
       )}
-    </div>
+    </article>
   )
 }
 
 export default function CollectorDashboard() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [requests, setRequests] = useState([])
-  const [myPickups, setMyPickups] = useState([])
+  const [requests, setRequests] = useState<PickupRequest[]>([])
+  const [myPickups, setMyPickups] = useState<PickupRequest[]>([])
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState("available")
+  const [tab, setTab] = useState<"available" | "mypickups" | "batches">("available")
 
-  useEffect(() => { if (status === "unauthenticated") router.push("/login") }, [status, router])
-  useEffect(() => { if (status === "authenticated") fetchData() }, [status])
+  useEffect(() => {
+    if (status === "unauthenticated") router.push("/login")
+  }, [status, router])
+
+  useEffect(() => {
+    if (status === "authenticated") void fetchData()
+  }, [status])
 
   async function fetchData() {
     setLoading(true)
-    const [a, m] = await Promise.all([
-      fetch("/api/requests/available").then(r => r.json()),
-      fetch("/api/requests/my-pickups").then(r => r.json()),
+    const [available, pickups] = await Promise.all([
+      fetch("/api/requests/available").then((response) => response.json()),
+      fetch("/api/requests/my-pickups").then((response) => response.json()),
     ])
-    setRequests(a.requests || [])
-    setMyPickups(m.requests || [])
+    setRequests(available.requests || [])
+    setMyPickups(pickups.requests || [])
     setLoading(false)
   }
 
-  async function acceptRequest(id) {
-    const res = await fetch("/api/requests/" + id + "/accept", { method: "POST" })
-    if (res.ok) fetchData()
+  async function acceptRequest(id: string) {
+    const response = await fetch(`/api/requests/${id}/accept`, { method: "POST" })
+    if (response.ok) void fetchData()
   }
 
-  async function completeRequest(id, weight) {
+  async function completeRequest(id: string, weight: string) {
     if (!weight) return
-    const res = await fetch("/api/requests/" + id + "/complete", {
-      method: "POST", headers: { "Content-Type": "application/json" },
+    const response = await fetch(`/api/requests/${id}/complete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ actualWeight: parseFloat(weight) }),
     })
-    if (res.ok) { const d = await res.json(); alert("Selesai! Household mendapat " + d.pointsEarned + " poin"); fetchData() }
+    if (response.ok) {
+      const data = await response.json()
+      alert(`Pickup selesai. Rumah tangga mendapat ${data.pointsEarned} poin.`)
+      void fetchData()
+    }
   }
 
-  if (status === "loading") return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"13px",color:"#9ca3af"}}>Memuat...</div>
+  if (status === "loading") return <div className="page-loader">Memuat dashboard...</div>
 
-  const tabs = [
-    { key: "available", label: "Request Tersedia", count: requests.length },
-    { key: "mypickups", label: "Pickup Saya", count: myPickups.length },
-  ]
+  const activePickups = myPickups.filter((request) => request.status !== "COMPLETED").length
 
   return (
-    <div style={{minHeight:"100vh",background:"#f9fafb"}}>
-      <div style={{background:"#0f2d13",padding:"28px 24px 60px",position:"relative",overflow:"hidden"}}>
-        <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,opacity:0.04}}>
-          {["♻","🚛","📦","♻","🌿","🚛","♻","📦"].map((e,i) => (
-            <span key={i} style={{position:"absolute",fontSize: i%2===0?"80px":"50px",top: (i*13)%80+"%",left: (i*15)%90+"%",transform:"rotate("+(i*23)+"deg)"}}>{e}</span>
-          ))}
-        </div>
+    <main className="app-page">
+      <section className="role-hero">
         <Navbar userName={session?.user?.name || ""} role="COLLECTOR" />
-        <div style={{maxWidth:"860px",margin:"24px auto 0",position:"relative",zIndex:1}}>
-          <div style={{display:"inline-block",border:"1px solid rgba(134,239,172,0.3)",color:"#86efac",fontSize:"10px",padding:"3px 10px",borderRadius:"20px",fontWeight:"600",marginBottom:"12px",letterSpacing:"1px"}}>DASHBOARD PENGEPUL</div>
-          <h1 style={{color:"#fff",fontSize:"28px",fontWeight:"700",marginBottom:"4px",letterSpacing:"-0.5px"}}>Halo, {session?.user?.name?.split(" ")[0]}!</h1>
-          <p style={{color:"#6b7280",fontSize:"13px"}}>Ambil request sampah dan kelola pickup harianmu</p>
+        <div className="role-hero-content">
+          <span className="section-kicker">Dashboard Pengepul</span>
+          <h1>Ambil request, validasi berat, selesaikan pickup.</h1>
+          <p>Pengepul mengambil sampah dari rumah tangga dan menyiapkan batch material untuk Recycler.</p>
+          <button className="light-btn" type="button" onClick={() => setTab("available")}>Ambil Request Sampah</button>
         </div>
-      </div>
+      </section>
 
-      <div style={{maxWidth:"860px",margin:"-32px auto 0",padding:"0 24px 32px",position:"relative",zIndex:2}}>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"20px"}}>
-          {[
-            { label: "REQUEST TERSEDIA", value: requests.length, sub: "menunggu diambil", accent: true },
-            { label: "SEDANG DIPROSES", value: myPickups.filter(r => r.status !== "COMPLETED").length, sub: "pickup aktif", accent: false },
-          ].map(s => (
-            <div key={s.label} style={{background:"#fff",borderRadius:"10px",padding:"16px 18px",border:"1px solid #e5e7eb",borderLeft: s.accent ? "3px solid #16a34a" : "1px solid #e5e7eb",boxShadow:"0 1px 3px rgba(0,0,0,0.06)"}}>
-              <div style={{fontSize:"10px",fontWeight:"700",color:"#9ca3af",letterSpacing:"0.8px",marginBottom:"8px"}}>{s.label}</div>
-              <div style={{fontSize:"26px",fontWeight:"700",color:"#111",lineHeight:"1",marginBottom:"3px"}}>{s.value}</div>
-              <div style={{fontSize:"11px",color:"#9ca3af"}}>{s.sub}</div>
-            </div>
-          ))}
+      <section className="role-dashboard-shell">
+        <div className="role-stat-grid">
+          <article className="stat-card"><small>Request Tersedia</small><strong>{requests.length}</strong><span>siap diambil</span></article>
+          <article className="stat-card"><small>Pickup Aktif</small><strong>{activePickups}</strong><span>perlu diselesaikan</span></article>
+          <article className="stat-card"><small>Batch Material</small><strong>+</strong><span>buat setelah pickup</span></article>
         </div>
 
-        <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:"10px",overflow:"hidden",boxShadow:"0 1px 3px rgba(0,0,0,0.04)"}}>
-          <div style={{borderBottom:"1px solid #f3f4f6",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div style={{display:"flex"}}>
-              {tabs.map(t => (
-                <button key={t.key} onClick={() => setTab(t.key)}
-                  style={{padding:"13px 20px",fontSize:"12px",fontWeight:"600",border:"none",background:"transparent",cursor:"pointer",borderBottom: tab===t.key ? "2px solid #111" : "2px solid transparent",color: tab===t.key ? "#111" : "#9ca3af",display:"flex",alignItems:"center",gap:"6px"}}>
-                  {t.label}
-                  <span style={{fontSize:"10px",padding:"1px 6px",borderRadius:"8px",background: tab===t.key ? "#111" : "#f3f4f6",color: tab===t.key ? "#fff" : "#9ca3af"}}>{t.count}</span>
-                </button>
-              ))}
-            </div>
-            <button onClick={() => router.push("/collector/batch/new")}
-              style={{margin:"0 16px",padding:"7px 14px",borderRadius:"5px",border:"none",background:"#16a34a",color:"#fff",fontSize:"11px",fontWeight:"600",cursor:"pointer"}}>
-              + Listing Batch
-            </button>
+        <div className="role-info-card">
+          <strong>Alur poin rumah tangga</strong>
+          <span>Setelah pickup selesai dan berat aktual dimasukkan, poin otomatis diberikan kepada rumah tangga.</span>
+        </div>
+
+        <section className="content-card role-workspace">
+          <div className="tab-list">
+            <button className={tab === "available" ? "active" : ""} type="button" onClick={() => setTab("available")}>Request Tersedia <span>{requests.length}</span></button>
+            <button className={tab === "mypickups" ? "active" : ""} type="button" onClick={() => setTab("mypickups")}>Pickup Saya <span>{myPickups.length}</span></button>
+            <button className={tab === "batches" ? "active" : ""} type="button" onClick={() => setTab("batches")}>Batch Material</button>
           </div>
 
           {loading ? (
-            <div style={{padding:"40px",textAlign:"center",fontSize:"13px",color:"#9ca3af"}}>Memuat data...</div>
+            <div className="empty-state"><p>Memuat data...</p></div>
           ) : tab === "available" ? (
-            requests.length === 0 ? (
-              <div style={{padding:"52px 20px",textAlign:"center"}}>
-                <div style={{width:"44px",height:"44px",background:"#f0fdf4",borderRadius:"10px",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px",fontSize:"20px"}}>📋</div>
-                <p style={{fontSize:"13px",fontWeight:"700",color:"#374151",marginBottom:"4px"}}>Tidak ada request tersedia</p>
-                <p style={{fontSize:"12px",color:"#9ca3af"}}>Request dari rumah tangga akan muncul di sini</p>
-              </div>
-            ) : (
-              <div>
-                {requests.map((req, i) => {
-                  const types = JSON.parse(req.sampahTypes || "[]")
-                  return (
-                    <div key={req.id} style={{padding:"14px 20px",borderBottom: i < requests.length-1 ? "1px solid #f9fafb" : "none",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                      <div>
-                        <div style={{fontSize:"11px",color:"#9ca3af",marginBottom:"4px",textTransform:"capitalize"}}>{types.join(" / ")}</div>
-                        <div style={{fontSize:"13px",fontWeight:"600",color:"#111",marginBottom:"2px"}}>{req.addressDetail}</div>
-                        <div style={{fontSize:"11px",color:"#9ca3af"}}>Dari: {req.householdName}{req.estimatedWeight ? " · Est. " + req.estimatedWeight + " kg" : ""}</div>
-                      </div>
-                      <button onClick={() => acceptRequest(req.id)}
-                        style={{padding:"8px 16px",borderRadius:"6px",border:"none",background:"#16a34a",color:"#fff",fontSize:"12px",fontWeight:"600",cursor:"pointer",whiteSpace:"nowrap",marginLeft:"16px"}}>
-                        Ambil
-                      </button>
-                    </div>
-                  )
-                })}
-              </div>
-            )
+            requests.length ? requests.map((request) => (
+              <article className="data-row" key={request.id}>
+                <div className="data-row-copy">
+                  <span className="data-eyebrow">{getTypes(request)}</span>
+                  <h3>{request.addressDetail || "Alamat penjemputan"}</h3>
+                  <p>Dari {request.householdName || "Rumah tangga"} {request.estimatedWeight ? `- estimasi ${request.estimatedWeight} kg` : ""}</p>
+                </div>
+                <div className="row-actions">
+                  <button className="outline-btn" type="button">Lihat Detail</button>
+                  <button className="green-small-btn" type="button" onClick={() => void acceptRequest(request.id)}>Ambil Request</button>
+                </div>
+              </article>
+            )) : <EmptyState title="Tidak ada request tersedia" text="Request baru dari rumah tangga akan muncul di sini." />
+          ) : tab === "mypickups" ? (
+            myPickups.length ? myPickups.map((request) => <PickupCard key={request.id} req={request} onComplete={completeRequest} />) :
+              <EmptyState title="Belum ada pickup" text="Ambil request sampah untuk mulai mengelola pickup." />
           ) : (
-            myPickups.length === 0 ? (
-              <div style={{padding:"52px 20px",textAlign:"center"}}>
-                <div style={{width:"44px",height:"44px",background:"#f9fafb",borderRadius:"10px",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px",fontSize:"20px"}}>🚛</div>
-                <p style={{fontSize:"13px",fontWeight:"700",color:"#374151",marginBottom:"4px"}}>Belum ada pickup</p>
-                <p style={{fontSize:"12px",color:"#9ca3af"}}>Pickup yang kamu ambil akan muncul di sini</p>
-              </div>
-            ) : (
-              <div>
-                {myPickups.map(req => <PickupCard key={req.id} req={req} onComplete={completeRequest} />)}
-              </div>
-            )
+            <div className="empty-state">
+              <div className="empty-icon">+</div>
+              <h3>Siapkan batch material</h3>
+              <p>Buat listing material setelah sampah terkumpul dan terpilah.</p>
+              <button className="green-small-btn" type="button" onClick={() => router.push("/collector/batch/new")}>Buat Batch Material</button>
+            </div>
           )}
-        </div>
-      </div>
-    </div>
+        </section>
+      </section>
+    </main>
   )
+}
+
+function EmptyState({ title, text }: { title: string; text: string }) {
+  return <div className="empty-state"><div className="empty-icon">+</div><h3>{title}</h3><p>{text}</p></div>
 }

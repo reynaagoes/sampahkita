@@ -4,7 +4,23 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import Navbar from "@/components/Navbar"
 
-const STATUS_DOT = {
+type PendingCollector = {
+  id: string
+  fullName: string
+  email: string
+  phone?: string | null
+}
+
+type RecentRequest = {
+  id: string
+  sampahTypes?: string | null
+  status: string
+  addressDetail?: string | null
+  householdName?: string | null
+  actualWeight?: number | string | null
+}
+
+const STATUS_DOT: Record<string, string> = {
   OPEN: "#f59e0b", ASSIGNED: "#3b82f6", COMPLETED: "#16a34a", CANCELLED: "#ef4444",
 }
 
@@ -12,8 +28,8 @@ export default function AdminDashboard() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [stats, setStats] = useState({ users: 0, pending: 0, transactions: 0, totalPoints: 0 })
-  const [pendingCollectors, setPending] = useState([])
-  const [recentRequests, setRecent] = useState([])
+  const [pendingCollectors, setPending] = useState<PendingCollector[]>([])
+  const [recentRequests, setRecent] = useState<RecentRequest[]>([])
   const [tab, setTab] = useState("overview")
   const [loading, setLoading] = useState(true)
 
@@ -33,7 +49,7 @@ export default function AdminDashboard() {
     setLoading(false)
   }
 
-  async function verify(collectorId, action) {
+  async function verify(collectorId: string, action: "APPROVED" | "REJECTED") {
     await fetch("/api/admin/collectors", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ collectorId, action }),
@@ -94,7 +110,7 @@ export default function AdminDashboard() {
                     <div key={c.id} style={{padding:"14px 16px",border:"1px solid #f3f4f6",borderRadius:"6px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                       <div>
                         <p style={{fontSize:"13px",fontWeight:"600",color:"#111",marginBottom:"2px"}}>{c.fullName}</p>
-                        <p style={{fontSize:"11px",color:"#9ca3af"}}>{c.email} · {c.phone}</p>
+                        <p style={{fontSize:"11px",color:"#9ca3af"}}>{c.email} - {c.phone}</p>
                         <div style={{display:"flex",alignItems:"center",gap:"5px",marginTop:"4px"}}>
                           <div style={{width:"5px",height:"5px",borderRadius:"50%",background:"#f59e0b"}}></div>
                           <span style={{fontSize:"10px",color:"#374151"}}>Menunggu verifikasi</span>
@@ -124,7 +140,7 @@ export default function AdminDashboard() {
                       <div>
                         <div style={{fontSize:"11px",color:"#9ca3af",marginBottom:"3px"}}>{types.join(" / ")}</div>
                         <div style={{fontSize:"13px",fontWeight:"600",color:"#111",marginBottom:"2px"}}>{req.addressDetail}</div>
-                        <div style={{fontSize:"11px",color:"#9ca3af"}}>Dari: {req.householdName}{req.actualWeight ? " · " + req.actualWeight + " kg" : ""}</div>
+                        <div style={{fontSize:"11px",color:"#9ca3af"}}>Dari: {req.householdName}{req.actualWeight ? " - " + req.actualWeight + " kg" : ""}</div>
                       </div>
                       <div style={{display:"flex",alignItems:"center",gap:"5px",whiteSpace:"nowrap"}}>
                         <div style={{width:"6px",height:"6px",borderRadius:"50%",background:dot}}></div>

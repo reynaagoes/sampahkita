@@ -1,7 +1,10 @@
 "use client"
-import { useState } from "react"
+
+import BrandLogo from "@/components/BrandLogo"
 import { signIn } from "next-auth/react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { FormEvent, useState } from "react"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -10,14 +13,22 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
-  async function handleSubmit(e) {
-    e.preventDefault()
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
     setLoading(true)
     setError("")
+
     const res = await signIn("credentials", { email, password, redirect: false })
-    if (res?.error) { setError("Email atau password salah"); setLoading(false); return }
-    const session = await fetch("/api/auth/session").then(r => r.json())
+
+    if (res?.error) {
+      setError("Email atau password salah")
+      setLoading(false)
+      return
+    }
+
+    const session = await fetch("/api/auth/session").then((response) => response.json())
     const role = session?.user?.role
+
     if (role === "HOUSEHOLD") router.push("/household")
     else if (role === "COLLECTOR") router.push("/collector")
     else if (role === "RECYCLER") router.push("/recycler")
@@ -26,80 +37,92 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{minHeight:"100vh",background:"#0f2d13",display:"flex",flexDirection:"column"}}>
-      <nav style={{padding:"0 28px",height:"60px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
-        <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-          <div style={{width:"32px",height:"32px",background:"#22c55e",borderRadius:"7px",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:"700",fontSize:"12px"}}>CS</div>
-          <span style={{color:"#fff",fontWeight:"700",fontSize:"16px",letterSpacing:"-0.3px"}}>CuanSampah</span>
-        </div>
-        <div style={{display:"flex",gap:"24px",alignItems:"center"}}>
-          <a href="#" style={{color:"#86efac",fontSize:"13px",textDecoration:"none"}}>Beranda</a>
-          <a href="#" style={{color:"#86efac",fontSize:"13px",textDecoration:"none"}}>Cara Kerja</a>
-          <a href="#" style={{color:"#86efac",fontSize:"13px",textDecoration:"none"}}>Dampak</a>
-          <a href="/register" style={{background:"#22c55e",color:"#fff",border:"none",padding:"8px 20px",borderRadius:"6px",fontSize:"13px",fontWeight:"700",cursor:"pointer",textDecoration:"none"}}>Daftar</a>
+    <main className="login-page">
+      <nav className="login-nav">
+        <BrandLogo href="/login" dark />
+        <div className="login-nav-links">
+          <a href="#layanan">Layanan</a>
+          <a href="#manfaat">Manfaat</a>
+          <Link href="/register" className="login-register-link">Daftar Gratis</Link>
         </div>
       </nav>
 
-      <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:"40px 28px"}}>
-        <div style={{width:"100%",maxWidth:"880px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"80px",alignItems:"center"}}>
-          <div>
-            <div style={{display:"inline-block",border:"1px solid rgba(134,239,172,0.35)",color:"#86efac",fontSize:"10px",padding:"4px 12px",borderRadius:"20px",fontWeight:"600",marginBottom:"20px",letterSpacing:"1px"}}>PLATFORM EKONOMI SIRKULAR INDONESIA</div>
-            <h1 style={{color:"#fff",fontSize:"40px",fontWeight:"700",lineHeight:"1.15",marginBottom:"14px",letterSpacing:"-0.5px"}}>Sampahmu,<br/><span style={{color:"#22c55e"}}>Cuanmu.</span></h1>
-            <p style={{color:"#6b7280",fontSize:"14px",lineHeight:"1.7",marginBottom:"32px"}}>Platform yang menghubungkan rumah tangga, pengepul, dan industri daur ulang dalam satu ekosistem yang menghasilkan nilai nyata.</p>
-            <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
-              {[
-                {code:"H",title:"Rumah Tangga",desc:"Jual sampah, bid barang, kumpulkan poin"},
-                {code:"C",title:"Pengepul",desc:"Ambil request, listing batch material"},
-                {code:"R",title:"Recycler",desc:"Beli batch dan ikut lelang barang"},
-              ].map(item => (
-                <div key={item.code} style={{display:"flex",alignItems:"center",gap:"12px",padding:"10px 14px",borderRadius:"8px",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)"}}>
-                  <div style={{width:"28px",height:"28px",borderRadius:"6px",background:"rgba(34,197,94,0.15)",border:"1px solid rgba(34,197,94,0.3)",display:"flex",alignItems:"center",justifyContent:"center",color:"#22c55e",fontSize:"11px",fontWeight:"700",flexShrink:0}}>{item.code}</div>
-                  <div>
-                    <p style={{color:"#fff",fontSize:"13px",fontWeight:"600",marginBottom:"1px"}}>{item.title}</p>
-                    <p style={{color:"#6b7280",fontSize:"11px"}}>{item.desc}</p>
-                  </div>
-                </div>
-              ))}
+      <section className="login-hero">
+        <div className="login-copy">
+          <span className="section-kicker">Layanan lingkungan untuk rumah tangga</span>
+          <h1>
+            Sampah terangkut,
+            <span>rumah tetap nyaman.</span>
+          </h1>
+          <p>
+            Jadwalkan penjemputan sampah gratis dari rumah. Kami membantu prosesnya
+            tetap mudah, teratur, dan memberi dampak baik untuk lingkungan.
+          </p>
+
+          <div className="login-feature-list" id="layanan">
+            <div className="login-feature-card">
+              <span className="feature-dot" />
+              <div>
+                <strong>Angkut sampah gratis</strong>
+                <small>Pilih jadwal, kami datang ke rumahmu.</small>
+              </div>
+            </div>
+            <div className="login-feature-card">
+              <span className="feature-dot" />
+              <div>
+                <strong>Kumpulkan poin</strong>
+                <small>Dapatkan nilai dari sampah yang dijemput.</small>
+              </div>
             </div>
           </div>
 
-          <div style={{background:"#fff",borderRadius:"12px",padding:"32px"}}>
-            <h2 style={{fontSize:"22px",fontWeight:"700",color:"#111",marginBottom:"4px",letterSpacing:"-0.3px"}}>Masuk</h2>
-            <p style={{fontSize:"13px",color:"#9ca3af",marginBottom:"24px"}}>Belum punya akun? <a href="/register" style={{color:"#16a34a",fontWeight:"600",textDecoration:"none"}}>Daftar gratis</a></p>
-            {error && <div style={{fontSize:"13px",padding:"10px 14px",borderRadius:"6px",background:"#fef2f2",color:"#dc2626",marginBottom:"16px",border:"1px solid #fecaca"}}>{error}</div>}
-            <form onSubmit={handleSubmit}>
-              <div style={{marginBottom:"14px"}}>
-                <label style={{display:"block",fontSize:"11px",fontWeight:"700",color:"#374151",marginBottom:"6px",letterSpacing:"0.5px"}}>EMAIL</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                  style={{width:"100%",padding:"11px 14px",borderRadius:"7px",border:"1px solid #e5e7eb",fontSize:"14px",outline:"none",boxSizing:"border-box",color:"#111"}}
-                  placeholder="nama@email.com" required />
-              </div>
-              <div style={{marginBottom:"20px"}}>
-                <label style={{display:"block",fontSize:"11px",fontWeight:"700",color:"#374151",marginBottom:"6px",letterSpacing:"0.5px"}}>PASSWORD</label>
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                  style={{width:"100%",padding:"11px 14px",borderRadius:"7px",border:"1px solid #e5e7eb",fontSize:"14px",outline:"none",boxSizing:"border-box",color:"#111"}}
-                  placeholder="••••••••" required />
-              </div>
-              <button type="submit" disabled={loading}
-                style={{width:"100%",padding:"12px",borderRadius:"7px",border:"none",background:loading?"#9ca3af":"#0f2d13",color:"#fff",fontSize:"14px",fontWeight:"700",cursor:loading?"not-allowed":"pointer",letterSpacing:"-0.2px"}}>
-                {loading ? "Memverifikasi..." : "Masuk"}
-              </button>
-            </form>
+          <div className="login-secondary-note" id="manfaat">
+            <strong>PasarCuan</strong>
+            <span>Fitur tambahan untuk barang yang masih layak dan material daur ulang.</span>
           </div>
         </div>
-      </div>
 
-      <div style={{background:"rgba(0,0,0,0.2)",padding:"16px 28px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"32px",width:"100%",maxWidth:"600px"}}>
-          {[["5.2rb+","kg terkumpul"],["1.2rb","kg CO2 dicegah"],["248","transaksi"],["3","jenis pengguna"]].map(([val,lbl]) => (
-            <div key={lbl}>
-              <div style={{color:"#22c55e",fontSize:"18px",fontWeight:"700"}}>{val}</div>
-              <div style={{color:"#6b7280",fontSize:"11px"}}>{lbl}</div>
-            </div>
-          ))}
-        </div>
-        <p style={{color:"#374151",fontSize:"11px",flexShrink:0}}>CuanSampah 2026 - ITB</p>
-      </div>
-    </div>
+        <form className="login-card" onSubmit={handleSubmit}>
+          <BrandLogo href="/login" compact />
+          <div className="login-card-head">
+            <h2>Masuk ke CuanSampah</h2>
+            <p>Belum punya akun? <Link href="/register">Daftar gratis</Link></p>
+          </div>
+
+          {error && <div className="form-error">{error}</div>}
+
+          <label className="form-field">
+            <span>Email</span>
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="nama@email.com"
+              required
+            />
+          </label>
+
+          <label className="form-field">
+            <span>Password</span>
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Masukkan password"
+              required
+            />
+          </label>
+
+          <button className="primary-btn" type="submit" disabled={loading}>
+            {loading ? "Memverifikasi..." : "Masuk"}
+          </button>
+
+          <div className="login-mini-links">
+            <Link href="/forgot-password">Lupa password?</Link>
+            <Link href="/register">Buat akun</Link>
+          </div>
+        </form>
+      </section>
+    </main>
   )
 }

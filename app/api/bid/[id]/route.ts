@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import pool from "@/lib/db"
 import { v4 as uuidv4 } from "uuid"
 
-export async function POST(req, { params }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
     const session = await getServerSession()
@@ -53,7 +53,7 @@ export async function POST(req, { params }) {
   }
 }
 
-export async function GET(req, { params }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
     const [listing] = await pool.execute(

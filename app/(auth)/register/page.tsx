@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { CSSProperties, FormEvent, useState } from "react"
 import { useRouter } from "next/navigation"
 
 const ROLES = [
@@ -14,7 +14,7 @@ export default function RegisterPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setLoading(true)
     setError("")
@@ -26,7 +26,7 @@ export default function RegisterPage() {
     router.push("/login")
   }
 
-  const S = {
+  const S: Record<"label" | "input", CSSProperties> = {
     label: {display:"block",fontSize:"12px",fontWeight:"600",color:"#374151",marginBottom:"6px",letterSpacing:"0.3px"},
     input: {width:"100%",padding:"10px 14px",borderRadius:"6px",border:"1px solid #e5e7eb",fontSize:"14px",outline:"none",boxSizing:"border-box",color:"#111"},
   }

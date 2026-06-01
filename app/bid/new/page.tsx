@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { ChangeEvent, CSSProperties, FormEvent, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import Navbar from "@/components/Navbar"
@@ -8,21 +8,21 @@ export default function NewBidPage() {
   const { data: session } = useSession()
   const router = useRouter()
   const [form, setForm] = useState({ title: "", description: "", minPrice: "", maxPrice: "", priceStep: "" })
-  const [photo, setPhoto] = useState(null)
-  const [preview, setPreview] = useState(null)
+  const [photo, setPhoto] = useState<File | null>(null)
+  const [preview, setPreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
-  function handlePhoto(e) {
-    const file = e.target.files[0]
+  function handlePhoto(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
     if (!file) return
     setPhoto(file)
     const reader = new FileReader()
-    reader.onload = () => setPreview(reader.result)
+    reader.onload = () => setPreview(typeof reader.result === "string" ? reader.result : null)
     reader.readAsDataURL(file)
   }
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     if (!photo) { setError("Foto barang wajib diupload"); return }
     if (parseInt(form.maxPrice) <= parseInt(form.minPrice)) { setError("Harga maksimum harus lebih besar dari minimum"); return }
@@ -43,7 +43,7 @@ export default function NewBidPage() {
     router.push("/bid")
   }
 
-  const S = { input: {width:"100%",padding:"10px 14px",borderRadius:"6px",border:"1px solid #e5e7eb",fontSize:"13px",outline:"none",boxSizing:"border-box",color:"#111"} }
+  const S: Record<"input", CSSProperties> = { input: {width:"100%",padding:"10px 14px",borderRadius:"6px",border:"1px solid #e5e7eb",fontSize:"13px",outline:"none",boxSizing:"border-box",color:"#111"} }
 
   return (
     <div style={{minHeight:"100vh",background:"#f9fafb"}}>
@@ -65,7 +65,7 @@ export default function NewBidPage() {
                 <img src={preview} alt="preview" style={{width:"100%",height:"220px",objectFit:"cover",borderRadius:"6px",border:"1px solid #e5e7eb"}} />
               ) : (
                 <div style={{width:"100%",height:"220px",border:"2px dashed #e5e7eb",borderRadius:"6px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#f9fafb"}}>
-                  <div style={{fontSize:"32px",marginBottom:"8px"}}>📷</div>
+                  <div style={{fontSize:"18px",fontWeight:"700",color:"#16a34a",marginBottom:"8px"}}>IMG</div>
                   <p style={{fontSize:"13px",fontWeight:"600",color:"#374151",marginBottom:"2px"}}>Klik untuk upload foto</p>
                   <p style={{fontSize:"11px",color:"#9ca3af"}}>JPG, PNG, WEBP - Max 5MB</p>
                 </div>
