@@ -13,6 +13,15 @@ type PickupRequest = {
   status: string
   actualWeight?: number | string | null
   estimatedWeight?: number | string | null
+  createdAt?: string | null
+}
+
+type MaterialBatch = {
+  id: string
+  wasteType: string
+  totalWeight: number | string
+  pricePerKg: number | string
+  status: string
 }
 
 function getTypes(req: PickupRequest) {
@@ -32,6 +41,7 @@ function PickupCard({ req, onComplete }: { req: PickupRequest; onComplete: (id: 
         <span className="data-eyebrow">{getTypes(req)}</span>
         <h3>{req.addressDetail || "Alamat penjemputan"}</h3>
         <p>Dari {req.householdName || "Rumah tangga"} {req.estimatedWeight ? `- estimasi ${req.estimatedWeight} kg` : ""}</p>
+        <p>{req.createdAt ? `Dibuat ${new Date(req.createdAt).toLocaleDateString("id-ID")}` : "Jadwal pickup mengikuti konfirmasi pengepul."}</p>
       </div>
       {req.status === "COMPLETED" ? (
         <span className="status-pill success">Selesai - {req.actualWeight || 0} kg</span>
@@ -52,25 +62,32 @@ export default function CollectorDashboard() {
   const router = useRouter()
   const [requests, setRequests] = useState<PickupRequest[]>([])
   const [myPickups, setMyPickups] = useState<PickupRequest[]>([])
+  const [batches, setBatches] = useState<MaterialBatch[]>([])
   const [loading, setLoading] = useState(true)
+  const [notice, setNotice] = useState("")
   const [tab, setTab] = useState<"available" | "mypickups" | "batches">("available")
+  const role = String(session?.user?.role || "")
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login")
-  }, [status, router])
+    if (status === "authenticated" && role !== "COLLECTOR") router.replace(role === "HOUSEHOLD" ? "/household" : role === "RECYCLER" ? "/recycler" : "/admin")
+  }, [status, role, router])
 
   useEffect(() => {
-    if (status === "authenticated") void fetchData()
-  }, [status])
+    if (status === "authenticated" && role === "COLLECTOR") void fetchData()
+  }, [status, role])
 
   async function fetchData() {
     setLoading(true)
-    const [available, pickups] = await Promise.all([
+    const [available, pickups, materialBatches] = await Promise.all([
       fetch("/api/requests/available").then((response) => response.json()),
       fetch("/api/requests/my-pickups").then((response) => response.json()),
+      fetch("/api/batches").then((response) => response.json()),
     ])
     setRequests(available.requests || [])
     setMyPickups(pickups.requests || [])
+    setBatches(materialBatches.batches || [])
+    setNotice(available.error || pickups.error || materialBatches.error || "")
     setLoading(false)
   }
 
@@ -93,9 +110,11 @@ export default function CollectorDashboard() {
     }
   }
 
-  if (status === "loading") return <div className="page-loader">Memuat dashboard...</div>
+  if (status !== "authenticated" || role !== "COLLECTOR") return <div className="page-loader">Memeriksa akses...</div>
 
   const activePickups = myPickups.filter((request) => request.status !== "COMPLETED").length
+  const completedPickups = myPickups.filter((request) => request.status === "COMPLETED")
+  const totalCollected = completedPickups.reduce((total, request) => total + Number(request.actualWeight || 0), 0)
 
   return (
     <main className="app-page">
@@ -103,29 +122,30 @@ export default function CollectorDashboard() {
         <Navbar userName={session?.user?.name || ""} role="COLLECTOR" />
         <div className="role-hero-content">
           <span className="section-kicker">Dashboard Pengepul</span>
-          <h1>Ambil request, validasi berat, selesaikan pickup.</h1>
-          <p>Pengepul mengambil sampah dari rumah tangga dan menyiapkan batch material untuk Recycler.</p>
+          <h1>Halo, {session.user.name?.split(" ")[0]}. Ambil request sampah dan kelola pickup harianmu.</h1>
+          <p>Pengepul mengambil request, input berat aktual, menyelesaikan pickup, lalu menyiapkan batch material untuk Recycler.</p>
           <button className="light-btn" type="button" onClick={() => setTab("available")}>Ambil Request Sampah</button>
         </div>
       </section>
 
       <section className="role-dashboard-shell">
-        <div className="role-stat-grid">
+        <div className="role-stat-grid role-stat-grid-four">
           <article className="stat-card"><small>Request Tersedia</small><strong>{requests.length}</strong><span>siap diambil</span></article>
           <article className="stat-card"><small>Pickup Aktif</small><strong>{activePickups}</strong><span>perlu diselesaikan</span></article>
-          <article className="stat-card"><small>Batch Material</small><strong>+</strong><span>buat setelah pickup</span></article>
+          <article className="stat-card"><small>Pickup Selesai</small><strong>{completedPickups.length}</strong><span>sudah tervalidasi</span></article>
+          <article className="stat-card"><small>Berat Terkumpul</small><strong>{totalCollected.toFixed(1)}</strong><span>kg material</span></article>
         </div>
 
         <div className="role-info-card">
-          <strong>Alur poin rumah tangga</strong>
-          <span>Setelah pickup selesai dan berat aktual dimasukkan, poin otomatis diberikan kepada rumah tangga.</span>
+          <strong>{notice ? "Status akses pengepul" : "Alur poin rumah tangga"}</strong>
+          <span>{notice || "Setelah pickup selesai dan berat aktual dimasukkan, poin otomatis diberikan kepada rumah tangga."}</span>
         </div>
 
         <section className="content-card role-workspace">
           <div className="tab-list">
             <button className={tab === "available" ? "active" : ""} type="button" onClick={() => setTab("available")}>Request Tersedia <span>{requests.length}</span></button>
             <button className={tab === "mypickups" ? "active" : ""} type="button" onClick={() => setTab("mypickups")}>Pickup Saya <span>{myPickups.length}</span></button>
-            <button className={tab === "batches" ? "active" : ""} type="button" onClick={() => setTab("batches")}>Batch Material</button>
+            <button className={tab === "batches" ? "active" : ""} type="button" onClick={() => setTab("batches")}>Batch Material <span>{batches.length}</span></button>
           </div>
 
           {loading ? (
@@ -137,9 +157,10 @@ export default function CollectorDashboard() {
                   <span className="data-eyebrow">{getTypes(request)}</span>
                   <h3>{request.addressDetail || "Alamat penjemputan"}</h3>
                   <p>Dari {request.householdName || "Rumah tangga"} {request.estimatedWeight ? `- estimasi ${request.estimatedWeight} kg` : ""}</p>
+                  <p>{request.createdAt ? `Dibuat ${new Date(request.createdAt).toLocaleDateString("id-ID")}` : "Jadwal pickup mengikuti konfirmasi pengepul."}</p>
                 </div>
                 <div className="row-actions">
-                  <button className="outline-btn" type="button">Lihat Detail</button>
+                  <button className="outline-btn" type="button" disabled title="Halaman detail request belum tersedia">Lihat Detail - Segera Hadir</button>
                   <button className="green-small-btn" type="button" onClick={() => void acceptRequest(request.id)}>Ambil Request</button>
                 </div>
               </article>
@@ -147,6 +168,20 @@ export default function CollectorDashboard() {
           ) : tab === "mypickups" ? (
             myPickups.length ? myPickups.map((request) => <PickupCard key={request.id} req={request} onComplete={completeRequest} />) :
               <EmptyState title="Belum ada pickup" text="Ambil request sampah untuk mulai mengelola pickup." />
+          ) : batches.length ? (
+            <>
+              {batches.map((batch) => (
+                <article className="data-row" key={batch.id}>
+                  <div className="data-row-copy">
+                    <span className="data-eyebrow">{batch.wasteType}</span>
+                    <h3>{batch.totalWeight} kg material</h3>
+                    <p>Rp {Number(batch.pricePerKg).toLocaleString("id-ID")}/kg - status {batch.status.toLowerCase()}</p>
+                  </div>
+                  <span className="status-pill success">{batch.status}</span>
+                </article>
+              ))}
+              <div className="workspace-footer"><button className="green-small-btn" type="button" onClick={() => router.push("/collector/batch/new")}>Buat Batch Material</button></div>
+            </>
           ) : (
             <div className="empty-state">
               <div className="empty-icon">+</div>

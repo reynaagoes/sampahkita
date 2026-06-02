@@ -6,6 +6,7 @@ export async function GET() {
   try {
     const session = await getServerSession()
     if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (session.user.role !== "RECYCLER") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
     const [users] = await pool.execute(
       "SELECT id FROM users WHERE email = ?",

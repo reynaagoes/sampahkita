@@ -4,6 +4,7 @@ import BrandLogo from "@/components/BrandLogo"
 import { signOut } from "next-auth/react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { getDashboardPath } from "@/lib/roles"
 
 type NavbarProps = {
   userName?: string | null
@@ -65,14 +66,7 @@ function IconLogout() {
 export default function Navbar({ userName, role }: NavbarProps) {
   const pathname = usePathname()
 
-  const dashboardPath =
-    role === "COLLECTOR"
-      ? "/collector"
-      : role === "RECYCLER"
-        ? "/recycler"
-        : role === "ADMIN"
-          ? "/admin"
-          : "/household"
+  const dashboardPath = getDashboardPath(role)
 
   const firstName = userName?.trim()?.split(" ")[0] || "JOO"
 
@@ -90,10 +84,12 @@ export default function Navbar({ userName, role }: NavbarProps) {
             <IconShop />
             PasarCuan
           </Link>
-          <Link href="/points" className={`app-nav-link ${pathname === "/points" ? "active" : ""}`}>
-            <IconPoints />
-            Poin Saya
-          </Link>
+          {role === "HOUSEHOLD" && (
+            <Link href="/points" className={`app-nav-link ${pathname === "/points" ? "active" : ""}`}>
+              <IconPoints />
+              Poin Saya
+            </Link>
+          )}
         </div>
 
         <div className="app-nav-actions">

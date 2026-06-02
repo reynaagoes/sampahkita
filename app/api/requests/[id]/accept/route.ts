@@ -9,12 +9,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+    if (session.user.role !== "COLLECTOR") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
     const [users] = await pool.execute(
-      "SELECT id FROM users WHERE email = ?",
+      "SELECT id, isVerified FROM users WHERE email = ?",
       [session.user.email]
     ) as any[]
     const collectorId = users[0]?.id
+    if (!users[0]?.isVerified) return NextResponse.json({ error: "Pengepul belum terverifikasi" }, { status: 403 })
 
     await pool.execute(
       "UPDATE sampah_requests SET collectorId = ?, status = ?, updatedAt = NOW() WHERE id = ? AND status = ?",

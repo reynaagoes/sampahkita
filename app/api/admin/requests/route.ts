@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
 import pool from "@/lib/db"
 
 export async function GET() {
   try {
+    const session = await getServerSession()
+    if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (session.user.role !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     const [requests] = await pool.execute(
       `SELECT sr.*, u.fullName as householdName 
        FROM sampah_requests sr

@@ -133,12 +133,12 @@ export default function BidPage() {
         <div>
           <span className="section-kicker">Fitur tambahan</span>
           <h1>PasarCuan</h1>
-          <p>Jual barang layak pakai atau material daur ulang dengan cara yang sederhana.</p>
+          <p>Jual barang layak pakai atau material daur ulang. Fitur pendukung setelah layanan angkut sampah.</p>
         </div>
         <div className="market-hero-note">
-          <strong>Layanan utama CuanSampah</strong>
+          <strong>Angkut Sampah Gratis tetap fitur utama.</strong>
           <span>Tetap butuh penjemputan sampah?</span>
-          <button type="button" onClick={() => router.push("/household/request/new")}>Request angkut gratis</button>
+          {session?.user?.role === "HOUSEHOLD" && <button type="button" onClick={() => router.push("/household/request/new")}>Request Angkut Gratis</button>}
         </div>
       </section>
 

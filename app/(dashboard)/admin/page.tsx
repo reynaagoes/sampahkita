@@ -32,9 +32,13 @@ export default function AdminDashboard() {
   const [recentRequests, setRecent] = useState<RecentRequest[]>([])
   const [tab, setTab] = useState("overview")
   const [loading, setLoading] = useState(true)
+  const role = String(session?.user?.role || "")
 
-  useEffect(() => { if (status === "unauthenticated") router.push("/login") }, [status, router])
-  useEffect(() => { if (status === "authenticated") fetchData() }, [status])
+  useEffect(() => {
+    if (status === "unauthenticated") router.push("/login")
+    if (status === "authenticated" && role !== "ADMIN") router.replace(role === "HOUSEHOLD" ? "/household" : role === "COLLECTOR" ? "/collector" : "/recycler")
+  }, [status, role, router])
+  useEffect(() => { if (status === "authenticated" && role === "ADMIN") fetchData() }, [status, role])
 
   async function fetchData() {
     setLoading(true)
@@ -57,7 +61,7 @@ export default function AdminDashboard() {
     fetchData()
   }
 
-  if (status === "loading") return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"13px",color:"#9ca3af"}}>Memuat...</div>
+  if (status !== "authenticated" || role !== "ADMIN") return <div className="page-loader">Memeriksa akses...</div>
 
   const tabs = [
     { key: "overview", label: "Overview" },

@@ -7,8 +7,10 @@ export async function POST(req: Request) {
   try {
     const session = await getServerSession()
     if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    const [users] = await pool.execute("SELECT id FROM users WHERE email = ?", [session.user.email])
+    if (session.user.role !== "COLLECTOR") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    const [users] = await pool.execute("SELECT id, isVerified FROM users WHERE email = ?", [session.user.email])
     const collectorId = users[0]?.id
+    if (!users[0]?.isVerified) return NextResponse.json({ error: "Pengepul belum terverifikasi" }, { status: 403 })
     const { wasteType, totalWeight, pricePerKg, location, description } = await req.json()
     const id = uuidv4()
     await pool.execute(
@@ -26,8 +28,10 @@ export async function GET() {
   try {
     const session = await getServerSession()
     if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    const [users] = await pool.execute("SELECT id FROM users WHERE email = ?", [session.user.email])
+    if (session.user.role !== "COLLECTOR") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    const [users] = await pool.execute("SELECT id, isVerified FROM users WHERE email = ?", [session.user.email])
     const collectorId = users[0]?.id
+    if (!users[0]?.isVerified) return NextResponse.json({ error: "Pengepul belum terverifikasi" }, { status: 403 })
     const [batches] = await pool.execute(
       "SELECT * FROM material_batches WHERE collectorId = ? ORDER BY createdAt DESC",
       [collectorId]

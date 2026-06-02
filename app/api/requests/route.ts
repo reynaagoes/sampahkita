@@ -9,6 +9,7 @@ export async function POST(req: Request) {
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+    if (session.user.role !== "HOUSEHOLD") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
     const { sampahTypes, estimatedWeight, addressDetail, notes } = await req.json()
 
@@ -47,6 +48,7 @@ export async function GET(req: Request) {
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+    if (session.user.role !== "HOUSEHOLD") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
     const [users] = await pool.execute(
       "SELECT id FROM users WHERE email = ?",

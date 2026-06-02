@@ -14,12 +14,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+    if (session.user.role !== "COLLECTOR") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
     const { actualWeight } = await req.json()
+    const [users] = await pool.execute("SELECT id, isVerified FROM users WHERE email = ?", [session.user.email]) as any[]
+    const collectorId = users[0]?.id
+    if (!users[0]?.isVerified) return NextResponse.json({ error: "Pengepul belum terverifikasi" }, { status: 403 })
 
     const [rows] = await pool.execute(
-      "SELECT * FROM sampah_requests WHERE id = ?",
-      [id]
+      "SELECT * FROM sampah_requests WHERE id = ? AND collectorId = ?",
+      [id, collectorId]
     ) as any[]
     const request = rows[0]
     if (!request) return NextResponse.json({ error: "Request tidak ditemukan" }, { status: 404 })

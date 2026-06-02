@@ -7,6 +7,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const { id } = await params
     const session = await getServerSession()
     if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (session.user.role !== "RECYCLER") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     const [users] = await pool.execute("SELECT id FROM users WHERE email = ?", [session.user.email])
     const recyclerId = users[0]?.id
     await pool.execute(

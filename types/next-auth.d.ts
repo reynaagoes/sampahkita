@@ -6,17 +6,17 @@ declare module "next-auth" {
       id: string
       email: string
       name: string
-      role: "HOUSEHOLD" | "COLLECTOR" | "ADMIN"
+      role: "HOUSEHOLD" | "COLLECTOR" | "RECYCLER" | "ADMIN"
     }
   }
   interface User {
-    role: "HOUSEHOLD" | "COLLECTOR" | "ADMIN"
+    role: "HOUSEHOLD" | "COLLECTOR" | "RECYCLER" | "ADMIN"
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
-    role: "HOUSEHOLD" | "COLLECTOR" | "ADMIN"
+    role: "HOUSEHOLD" | "COLLECTOR" | "RECYCLER" | "ADMIN"
     id: string
   }
 }

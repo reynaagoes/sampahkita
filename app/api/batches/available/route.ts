@@ -6,6 +6,7 @@ export async function GET() {
   try {
     const session = await getServerSession()
     if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (session.user.role !== "RECYCLER") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
     const [batches] = await pool.execute(
       "SELECT mb.*, u.fullName as collectorName FROM material_batches mb JOIN users u ON mb.collectorId = u.id WHERE mb.status = ? ORDER BY mb.createdAt DESC",

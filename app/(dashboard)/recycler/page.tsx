@@ -21,14 +21,16 @@ export default function RecyclerDashboard() {
   const [myPurchases, setMyPurchases] = useState<Batch[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<"available" | "purchases" | "stats">("available")
+  const role = String(session?.user?.role || "")
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login")
-  }, [status, router])
+    if (status === "authenticated" && role !== "RECYCLER") router.replace(role === "HOUSEHOLD" ? "/household" : role === "COLLECTOR" ? "/collector" : "/admin")
+  }, [status, role, router])
 
   useEffect(() => {
-    if (status === "authenticated") void fetchData()
-  }, [status])
+    if (status === "authenticated" && role === "RECYCLER") void fetchData()
+  }, [status, role])
 
   async function fetchData() {
     setLoading(true)
@@ -52,7 +54,7 @@ export default function RecyclerDashboard() {
     }
   }
 
-  if (status === "loading") return <div className="page-loader">Memuat dashboard...</div>
+  if (status !== "authenticated" || role !== "RECYCLER") return <div className="page-loader">Memeriksa akses...</div>
 
   const totalBought = myPurchases.reduce((total, batch) => total + Number(batch.totalWeight || 0), 0)
   const materialTypes = new Set(myPurchases.map((batch) => batch.wasteType)).size
@@ -63,17 +65,18 @@ export default function RecyclerDashboard() {
         <Navbar userName={session?.user?.name || ""} role="RECYCLER" />
         <div className="role-hero-content">
           <span className="section-kicker">Dashboard Recycler</span>
-          <h1>Temukan batch material untuk proses daur ulang.</h1>
-          <p>Recycler membeli material daur ulang dari pengepul terverifikasi.</p>
+          <h1>Selamat datang, {session.user.name?.split(" ")[0]}. Beli batch material daur ulang dari pengepul terverifikasi.</h1>
+          <p>Lihat batch tersedia, pilih material, beli batch, dan pantau riwayat pembelianmu.</p>
           <button className="light-btn" type="button" onClick={() => setTab("available")}>Cari Batch Material</button>
         </div>
       </section>
 
       <section className="role-dashboard-shell">
-        <div className="role-stat-grid">
+        <div className="role-stat-grid role-stat-grid-four">
           <article className="stat-card"><small>Batch Tersedia</small><strong>{batches.length}</strong><span>siap dibeli</span></article>
           <article className="stat-card"><small>Pembelian Saya</small><strong>{myPurchases.length}</strong><span>batch terbeli</span></article>
           <article className="stat-card"><small>Total Material</small><strong>{totalBought.toFixed(1)}</strong><span>kg material dibeli</span></article>
+          <article className="stat-card"><small>Kategori Aktif</small><strong>{materialTypes}</strong><span>jenis material dibeli</span></article>
         </div>
 
         <div className="role-info-card">
@@ -120,7 +123,7 @@ function BatchRow({ batch, action, purchased = false }: { batch: Batch; action?:
       </div>
       <div className="row-actions">
         <strong className="batch-price">Rp {Number(batch.pricePerKg).toLocaleString("id-ID")}/kg</strong>
-        {purchased ? <span className="status-pill success">Terbeli</span> : <button className="green-small-btn" type="button" onClick={action}>Beli Batch</button>}
+        {purchased ? <span className="status-pill success">Terbeli</span> : <><button className="outline-btn" type="button" disabled title="Halaman detail batch belum tersedia">Lihat Detail</button><button className="green-small-btn" type="button" onClick={action}>Beli Batch</button></>}
       </div>
     </article>
   )

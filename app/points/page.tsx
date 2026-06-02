@@ -13,9 +13,9 @@ const EARNING_STEPS = [
 ]
 
 const REWARDS = [
-  { name: "Voucher Rp5.000", points: 5000, description: "Voucher hemat untuk kebutuhan harian." },
-  { name: "Voucher Rp10.000", points: 9000, description: "Reward untuk kontribusi rutinmu." },
-  { name: "Badge Eco Hero", points: 12000, description: "Badge khusus pengguna peduli lingkungan." },
+  { name: "Voucher Rp5.000", points: 500, description: "Voucher hemat untuk kebutuhan harian." },
+  { name: "Voucher Rp10.000", points: 1000, description: "Reward untuk kontribusi rutinmu." },
+  { name: "Badge Eco Hero", points: 1500, description: "Badge khusus pengguna peduli lingkungan." },
 ]
 
 export default function PointsPage() {
@@ -35,18 +35,19 @@ export default function PointsPage() {
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login")
-  }, [status, router])
+    if (status === "authenticated" && role !== "HOUSEHOLD") router.replace(role === "COLLECTOR" ? "/collector" : role === "RECYCLER" ? "/recycler" : "/admin")
+  }, [status, role, router])
 
   useEffect(() => {
-    if (status !== "authenticated") return
+    if (status !== "authenticated" || role !== "HOUSEHOLD") return
     fetch("/api/points")
       .then((response) => response.json())
       .then((data) => setPoints(Number(data.total) || 0))
       .catch(() => setPoints(0))
       .finally(() => setLoading(false))
-  }, [status])
+  }, [status, role])
 
-  if (status === "loading" || loading) return <div className="page-loader">Memuat poin...</div>
+  if (status !== "authenticated" || role !== "HOUSEHOLD" || loading) return <div className="page-loader">Memuat poin...</div>
 
   return (
     <main className="app-page">
@@ -63,6 +64,16 @@ export default function PointsPage() {
             {role === "HOUSEHOLD" ? "Buat Request Angkut" : "Kembali ke Dashboard"}
           </button>
         </div>
+
+        <section className="content-section">
+          <div className="section-heading">
+            <h2>Poin Dipakai untuk Apa?</h2>
+            <p>Poin menjadi indikator dampak dan akan mendukung penukaran voucher, reward, serta badge kontribusi.</p>
+          </div>
+          <div className="points-purpose">
+            <span>Reward</span><span>Voucher</span><span>Badge kontribusi</span><span>Indikator dampak</span>
+          </div>
+        </section>
 
         <section className="content-section">
           <div className="section-heading">
@@ -93,7 +104,7 @@ export default function PointsPage() {
                 <p>{reward.description}</p>
                 <div>
                   <strong>{reward.points.toLocaleString("id-ID")} poin</strong>
-                  <button className="outline-btn" type="button" disabled={points < reward.points}>Tukar</button>
+                  <button className="outline-btn" type="button" disabled>Tukar - Segera Hadir</button>
                 </div>
               </article>
             ))}
@@ -107,7 +118,7 @@ export default function PointsPage() {
           </div>
           <div className="empty-state">
             <div className="empty-icon">+</div>
-            <h3>Riwayat detail belum tersedia</h3>
+            <h3>Riwayat poin akan muncul setelah request selesai.</h3>
             <p>Total poin tetap dihitung dari aktivitas yang sudah tervalidasi.</p>
           </div>
         </section>

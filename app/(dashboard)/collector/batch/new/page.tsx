@@ -3,6 +3,7 @@ import { CSSProperties, FormEvent, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import Navbar from "@/components/Navbar"
+import RoleGate from "@/components/RoleGate"
 
 const WASTE_TYPES = [
   { id: "plastik", label: "Plastik", price: 2500 },
@@ -42,6 +43,7 @@ export default function NewBatchPage() {
   const S: Record<"input", CSSProperties> = { input: {width:"100%",padding:"10px 14px",borderRadius:"6px",border:"1px solid #e5e7eb",fontSize:"13px",outline:"none",boxSizing:"border-box",color:"#111"} }
 
   return (
+    <RoleGate allow={["COLLECTOR"]}>
     <div style={{minHeight:"100vh",background:"#f9fafb"}}>
       <Navbar userName={session?.user?.name || ""} role="COLLECTOR" />
       <div style={{maxWidth:"600px",margin:"0 auto",padding:"32px 24px"}}>
@@ -112,5 +114,6 @@ export default function NewBatchPage() {
         </form>
       </div>
     </div>
+    </RoleGate>
   )
 }

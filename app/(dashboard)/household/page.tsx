@@ -11,6 +11,8 @@ type RequestItem = {
   createdAt?: string
   scheduledAt?: string
   address?: string
+  addressDetail?: string
+  sampahTypes?: string
   wasteType?: string
   type?: string
   category?: string
@@ -42,13 +44,15 @@ export default function HouseholdDashboard() {
   const [requests, setRequests] = useState<RequestItem[]>([])
   const [points, setPoints] = useState(0)
   const [loading, setLoading] = useState(true)
+  const role = String(session?.user?.role || "")
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login")
-  }, [status, router])
+    if (status === "authenticated" && role !== "HOUSEHOLD") router.replace(role === "COLLECTOR" ? "/collector" : role === "RECYCLER" ? "/recycler" : "/admin")
+  }, [status, role, router])
 
   useEffect(() => {
-    if (status !== "authenticated") return
+    if (status !== "authenticated" || role !== "HOUSEHOLD") return
 
     Promise.all([
       fetch("/api/requests").then((response) => response.json()).catch(() => ({ requests: [] })),
@@ -58,9 +62,9 @@ export default function HouseholdDashboard() {
       setPoints(pt.total || 0)
       setLoading(false)
     })
-  }, [status])
+  }, [status, role])
 
-  if (status === "loading" || loading) {
+  if (status !== "authenticated" || role !== "HOUSEHOLD" || loading) {
     return <div className="page-loader">Memuat dashboard...</div>
   }
 
@@ -153,8 +157,8 @@ export default function HouseholdDashboard() {
                         <span>{formatDate(item.scheduledAt || item.createdAt).split(" ").slice(1).join(" ")}</span>
                       </div>
                       <div>
-                        <h3>{item.wasteType || item.type || item.category || "Sampah Rumah Tangga"}</h3>
-                        <p>{item.address || "Alamat penjemputan tersimpan"}</p>
+                        <h3>{item.wasteType || item.type || item.category || item.sampahTypes || "Sampah Rumah Tangga"}</h3>
+                        <p>{item.addressDetail || item.address || "Alamat penjemputan tersimpan"}</p>
                       </div>
                       <span className={`status-pill ${statusInfo.tone}`}>{statusInfo.label}</span>
                     </div>
@@ -178,6 +182,7 @@ export default function HouseholdDashboard() {
             <div className="classic-panel quick-actions">
               <h2>Aksi Cepat</h2>
               <button type="button" onClick={() => router.push("/household/request/new")}>Buat Penjemputan</button>
+              <button type="button" onClick={() => router.push("/points")}>Poin Saya</button>
               <button type="button" onClick={() => router.push("/bid")}>Buka PasarCuan</button>
               <button type="button">Panduan Pilah Sampah</button>
             </div>
