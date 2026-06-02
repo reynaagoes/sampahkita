@@ -65,8 +65,9 @@ function IconLogout() {
 
 export default function Navbar({ userName, role }: NavbarProps) {
   const pathname = usePathname()
+  const normalizedRole = String(role || "").toUpperCase()
 
-  const dashboardPath = getDashboardPath(role)
+  const dashboardPath = getDashboardPath(normalizedRole)
 
   const firstName = userName?.trim()?.split(" ")[0] || "JOO"
 
@@ -78,13 +79,13 @@ export default function Navbar({ userName, role }: NavbarProps) {
         <div className="app-nav-links">
           <Link href={dashboardPath} className={`app-nav-link ${pathname === dashboardPath ? "active" : ""}`}>
             <IconHome />
-            {ROLE_LABEL[role || ""] || "Dashboard"}
+            {ROLE_LABEL[normalizedRole] || "Dashboard"}
           </Link>
           <Link href="/bid" className={`app-nav-link ${pathname.startsWith("/bid") ? "active" : ""}`}>
             <IconShop />
             PasarCuan
           </Link>
-          {role === "HOUSEHOLD" && (
+          {normalizedRole === "HOUSEHOLD" && (
             <Link href="/points" className={`app-nav-link ${pathname === "/points" ? "active" : ""}`}>
               <IconPoints />
               Poin Saya

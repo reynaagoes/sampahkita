@@ -3,7 +3,7 @@
 import Navbar from "@/components/Navbar"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 type Batch = {
   id: string
@@ -12,6 +12,10 @@ type Batch = {
   totalWeight: number | string
   pricePerKg: number | string
   location?: string | null
+  description?: string | null
+  status?: string | null
+  grade?: string | null
+  collectorPhone?: string | null
 }
 
 export default function RecyclerDashboard() {
@@ -20,19 +24,11 @@ export default function RecyclerDashboard() {
   const [batches, setBatches] = useState<Batch[]>([])
   const [myPurchases, setMyPurchases] = useState<Batch[]>([])
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<"available" | "purchases" | "stats">("available")
-  const role = String(session?.user?.role || "")
+  const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null)
+  const [tab, setTab] = useState<"available" | "requested" | "active" | "history">("available")
+  const role = String(session?.user?.role || "").toUpperCase()
 
-  useEffect(() => {
-    if (status === "unauthenticated") router.push("/login")
-    if (status === "authenticated" && role !== "RECYCLER") router.replace(role === "HOUSEHOLD" ? "/household" : role === "COLLECTOR" ? "/collector" : "/admin")
-  }, [status, role, router])
-
-  useEffect(() => {
-    if (status === "authenticated" && role === "RECYCLER") void fetchData()
-  }, [status, role])
-
-  async function fetchData() {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     const [available, purchases] = await Promise.all([
       fetch("/api/batches/available").then((response) => response.json()),
@@ -41,12 +37,21 @@ export default function RecyclerDashboard() {
     setBatches(available.batches || [])
     setMyPurchases(purchases.batches || [])
     setLoading(false)
-  }
+  }, [])
+
+  useEffect(() => {
+    if (status === "unauthenticated") router.push("/login")
+    if (status === "authenticated" && role !== "RECYCLER") router.replace(role === "HOUSEHOLD" ? "/household" : role === "COLLECTOR" ? "/collector" : "/admin")
+  }, [status, role, router])
+
+  useEffect(() => {
+    if (status === "authenticated" && role === "RECYCLER") void Promise.resolve().then(fetchData)
+  }, [status, role, fetchData])
 
   async function purchase(batchId: string) {
     const response = await fetch(`/api/batches/${batchId}/purchase`, { method: "POST" })
     if (response.ok) {
-      alert("Pembelian batch berhasil.")
+      alert("Pengajuan pembelian dikirim ke pengepul.")
       void fetchData()
     } else {
       const data = await response.json()
@@ -54,10 +59,21 @@ export default function RecyclerDashboard() {
     }
   }
 
+  async function confirmReceived(batchId: string) {
+    const response = await fetch(`/api/batches/${batchId}/confirm`, { method: "POST" })
+    if (response.ok) {
+      alert("Penerimaan material dikonfirmasi.")
+      void fetchData()
+    } else alert((await response.json().catch(() => ({}))).error || "Penerimaan tidak dapat dikonfirmasi")
+  }
+
   if (status !== "authenticated" || role !== "RECYCLER") return <div className="page-loader">Memeriksa akses...</div>
 
   const totalBought = myPurchases.reduce((total, batch) => total + Number(batch.totalWeight || 0), 0)
   const materialTypes = new Set(myPurchases.map((batch) => batch.wasteType)).size
+  const requested = myPurchases.filter((batch) => ["PURCHASE_REQUESTED", "REJECTED"].includes(String(batch.status)))
+  const active = myPurchases.filter((batch) => ["APPROVED", "DELIVERED"].includes(String(batch.status)))
+  const history = myPurchases.filter((batch) => ["COMPLETED", "SOLD"].includes(String(batch.status)))
 
   return (
     <main className="app-page">
@@ -88,32 +104,28 @@ export default function RecyclerDashboard() {
         <section className="content-card role-workspace">
           <div className="tab-list">
             <button className={tab === "available" ? "active" : ""} type="button" onClick={() => setTab("available")}>Batch Material Tersedia <span>{batches.length}</span></button>
-            <button className={tab === "purchases" ? "active" : ""} type="button" onClick={() => setTab("purchases")}>Pembelian Saya <span>{myPurchases.length}</span></button>
-            <button className={tab === "stats" ? "active" : ""} type="button" onClick={() => setTab("stats")}>Statistik Material</button>
+            <button className={tab === "requested" ? "active" : ""} type="button" onClick={() => setTab("requested")}>Pengajuan Pembelian <span>{requested.length}</span></button>
+            <button className={tab === "active" ? "active" : ""} type="button" onClick={() => setTab("active")}>Pembelian Aktif <span>{active.length}</span></button>
+            <button className={tab === "history" ? "active" : ""} type="button" onClick={() => setTab("history")}>Riwayat Pembelian <span>{history.length}</span></button>
           </div>
 
           {loading ? (
             <div className="empty-state"><p>Memuat data...</p></div>
           ) : tab === "available" ? (
-            batches.length ? batches.map((batch) => <BatchRow batch={batch} key={batch.id} action={() => void purchase(batch.id)} />) :
-              <EmptyState title="Belum ada batch material" text="Batch dari pengepul terverifikasi akan muncul di sini." />
-          ) : tab === "purchases" ? (
-            myPurchases.length ? myPurchases.map((batch) => <BatchRow batch={batch} key={batch.id} purchased />) :
-              <EmptyState title="Belum ada pembelian" text="Batch yang dibeli akan tersimpan di bagian ini." />
-          ) : (
-            <div className="material-stats">
-              <article><span>Total berat dibeli</span><strong>{totalBought.toFixed(1)} kg</strong></article>
-              <article><span>Jenis material</span><strong>{materialTypes}</strong></article>
-              <article><span>Total transaksi</span><strong>{myPurchases.length}</strong></article>
-            </div>
-          )}
+            batches.length ? <>{batches.map((batch) => <BatchRow batch={batch} key={batch.id} action={() => void purchase(batch.id)} onDetail={() => setSelectedBatch(batch)} />)}{selectedBatch && <BatchDetail batch={selectedBatch} close={() => setSelectedBatch(null)} />}</> :
+              <EmptyState title="Belum ada batch material" text="Batch akan muncul setelah pengepul terverifikasi menyelesaikan pickup dan membuat batch material." />
+          ) : tab === "requested" ? (
+            requested.length ? requested.map((batch) => <BatchRow batch={batch} key={batch.id} purchased />) : <EmptyState title="Belum ada pengajuan" text="Batch yang diajukan akan tampil di sini." />
+          ) : tab === "active" ? (
+            active.length ? active.map((batch) => <BatchRow batch={batch} key={batch.id} purchased confirm={batch.status === "DELIVERED" ? () => void confirmReceived(batch.id) : undefined} />) : <EmptyState title="Belum ada pembelian aktif" text="Pembelian yang disetujui pengepul akan tampil di sini." />
+          ) : history.length ? history.map((batch) => <BatchRow batch={batch} key={batch.id} purchased />) : <EmptyState title="Belum ada riwayat pembelian" text="Material yang selesai diterima akan tersimpan di sini." />}
         </section>
       </section>
     </main>
   )
 }
 
-function BatchRow({ batch, action, purchased = false }: { batch: Batch; action?: () => void; purchased?: boolean }) {
+function BatchRow({ batch, action, onDetail, purchased = false, confirm }: { batch: Batch; action?: () => void; onDetail?: () => void; purchased?: boolean; confirm?: () => void }) {
   return (
     <article className="data-row">
       <div className="data-row-copy">
@@ -123,8 +135,22 @@ function BatchRow({ batch, action, purchased = false }: { batch: Batch; action?:
       </div>
       <div className="row-actions">
         <strong className="batch-price">Rp {Number(batch.pricePerKg).toLocaleString("id-ID")}/kg</strong>
-        {purchased ? <span className="status-pill success">Terbeli</span> : <><button className="outline-btn" type="button" disabled title="Halaman detail batch belum tersedia">Lihat Detail</button><button className="green-small-btn" type="button" onClick={action}>Beli Batch</button></>}
+        {purchased ? <><span className="status-pill success">{batch.status}</span>{["APPROVED", "DELIVERED"].includes(String(batch.status)) && batch.collectorPhone && <a className="outline-btn" href={`tel:${batch.collectorPhone}`}>Hubungi Pengepul</a>}{confirm && <button className="green-small-btn" type="button" onClick={confirm}>Konfirmasi Diterima</button>}</> : <><button className="outline-btn" type="button" onClick={onDetail}>Lihat Detail</button><button className="green-small-btn" type="button" onClick={action}>Ajukan Pembelian</button></>}
       </div>
+    </article>
+  )
+}
+
+function BatchDetail({ batch, close }: { batch: Batch; close: () => void }) {
+  return (
+    <article className="batch-detail-card">
+      <div>
+        <span className="data-eyebrow">Detail Batch Material</span>
+        <h3>{batch.wasteType} - {batch.totalWeight} kg - grade {batch.grade || "B"}</h3>
+        <p>{batch.description || "Pengepul belum menambahkan catatan kualitas material."}</p>
+        <p>Lokasi: {batch.location || "Belum dicantumkan"} | Harga: Rp {Number(batch.pricePerKg).toLocaleString("id-ID")}/kg</p>
+      </div>
+      <button className="outline-btn" type="button" onClick={close}>Tutup Detail</button>
     </article>
   )
 }

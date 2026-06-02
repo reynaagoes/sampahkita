@@ -9,6 +9,7 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
+  const [mock, setMock] = useState(false)
   const [error, setError] = useState("")
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -22,6 +23,12 @@ export default function ForgotPassword() {
     })
 
     if (resetError) {
+      if (resetError.message === "Konfigurasi Supabase belum tersedia.") {
+        setMock(true)
+        setSent(true)
+        setLoading(false)
+        return
+      }
       setError(resetError.message)
       setLoading(false)
       return
@@ -40,7 +47,7 @@ export default function ForgotPassword() {
           <>
             <div className="auth-success-mark">OK</div>
             <h1>Email terkirim</h1>
-            <p>Cek email <strong>{email}</strong> dan buka link untuk membuat password baru.</p>
+            <p>{mock ? <>Mode demo aktif. Permintaan reset untuk <strong>{email}</strong> sudah dicatat, tetapi email belum dikirim karena layanan email belum dikonfigurasi.</> : <>Cek email <strong>{email}</strong> dan buka link untuk membuat password baru.</>}</p>
             <Link href="/login" className="secondary-link-btn">Kembali ke Login</Link>
           </>
         ) : (

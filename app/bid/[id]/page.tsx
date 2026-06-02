@@ -9,6 +9,8 @@ type Listing = {
   sellerName: string
   description?: string | null
   photoUrl?: string | null
+  contactName?: string | null
+  contactPhone?: string | null
   bidCount?: number | string
   currentPrice: number | string
   minPrice: number | string
@@ -31,6 +33,7 @@ export default function BidDetailPage() {
   const params = useParams<{ id: string }>()
   const [listing, setListing] = useState<Listing | null>(null)
   const [bidHistory, setBidHistory] = useState<BidHistoryItem[]>([])
+  const [images, setImages] = useState<Array<{ id: string; imageUrl: string }>>([])
   const [loading, setLoading] = useState(true)
   const [bidding, setBidding] = useState(false)
 
@@ -39,8 +42,9 @@ export default function BidDetailPage() {
 
   async function fetchDetail() {
     const res = await fetch("/api/bid/" + params.id).then(r => r.json())
-    setListing(res.listing)
+    setListing({ ...res.listing, photoUrl: res.images?.[0]?.imageUrl || res.listing?.photoUrl })
     setBidHistory(res.bidHistory || [])
+    setImages(res.images || [])
     setLoading(false)
   }
 
@@ -82,12 +86,16 @@ export default function BidDetailPage() {
             ) : (
               <div style={{width:"100%",aspectRatio:"1",background:"#f3f4f6",borderRadius:"10px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"60px"}}>📦</div>
             )}
+            {images.length > 1 && <div style={{display:"flex",gap:"8px",marginTop:"10px",overflowX:"auto"}}>{images.map((image) => <button key={image.id} type="button" onClick={() => setListing({ ...listing, photoUrl: image.imageUrl })} style={{border:listing.photoUrl===image.imageUrl?"2px solid #16a34a":"1px solid #e5e7eb",borderRadius:"6px",padding:0,background:"#fff"}}><img src={image.imageUrl} alt="thumbnail" style={{width:"72px",height:"56px",objectFit:"cover",borderRadius:"5px"}} /></button>)}</div>}
           </div>
 
           <div>
             <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:"10px",padding:"20px",marginBottom:"14px"}}>
               <h1 style={{fontSize:"20px",fontWeight:"700",color:"#111",marginBottom:"4px",letterSpacing:"-0.3px"}}>{listing.title}</h1>
               <p style={{fontSize:"13px",color:"#9ca3af",marginBottom:"12px"}}>oleh {listing.sellerName}</p>
+              {(listing.contactName || listing.contactPhone) && <div style={{padding:"10px 12px",background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:"6px",marginBottom:"12px",fontSize:"12px",color:"#166534"}}>
+                <strong>Kontak Penjual:</strong> {listing.contactName || listing.sellerName} {listing.contactPhone && <a href={`tel:${listing.contactPhone}`} style={{marginLeft:"8px",color:"#166534",fontWeight:"700"}}>Hubungi Penjual</a>}
+              </div>}
               {listing.description && <p style={{fontSize:"13px",color:"#374151",lineHeight:"1.6",marginBottom:"14px",paddingTop:"12px",borderTop:"1px solid #f3f4f6"}}>{listing.description}</p>}
 
               <div style={{padding:"12px",background:"#f9fafb",borderRadius:"6px",marginBottom:"14px",border:"1px solid #f3f4f6"}}>

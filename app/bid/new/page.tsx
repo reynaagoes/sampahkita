@@ -7,24 +7,27 @@ import Navbar from "@/components/Navbar"
 export default function NewBidPage() {
   const { data: session } = useSession()
   const router = useRouter()
-  const [form, setForm] = useState({ title: "", description: "", minPrice: "", maxPrice: "", priceStep: "" })
-  const [photo, setPhoto] = useState<File | null>(null)
-  const [preview, setPreview] = useState<string | null>(null)
+  const [form, setForm] = useState({ title: "", description: "", contactName: "", contactPhone: "", minPrice: "", maxPrice: "", priceStep: "" })
+  const [photos, setPhotos] = useState<File[]>([])
+  const [previews, setPreviews] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
   function handlePhoto(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setPhoto(file)
-    const reader = new FileReader()
-    reader.onload = () => setPreview(typeof reader.result === "string" ? reader.result : null)
-    reader.readAsDataURL(file)
+    const files = Array.from(e.target.files || []).slice(0, 5)
+    if (!files.length) return
+    setPhotos(files)
+    Promise.all(files.map((file) => new Promise<string>((resolve) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "")
+      reader.readAsDataURL(file)
+    }))).then((items) => setPreviews(items.filter(Boolean)))
   }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (!photo) { setError("Foto barang wajib diupload"); return }
+    if (photos.length < 1 || photos.length > 5) { setError("Upload 1 sampai 5 gambar"); return }
+    if (!form.contactName || !form.contactPhone) { setError("Nama dan nomor kontak wajib diisi"); return }
     if (parseInt(form.maxPrice) <= parseInt(form.minPrice)) { setError("Harga maksimum harus lebih besar dari minimum"); return }
     setLoading(true)
     setError("")
@@ -32,10 +35,12 @@ export default function NewBidPage() {
     const formData = new FormData()
     formData.append("title", form.title)
     formData.append("description", form.description)
+    formData.append("contactName", form.contactName)
+    formData.append("contactPhone", form.contactPhone)
     formData.append("minPrice", form.minPrice)
     formData.append("maxPrice", form.maxPrice)
     formData.append("priceStep", form.priceStep)
-    formData.append("photo", photo)
+    photos.forEach((photo) => formData.append("images", photo))
 
     const res = await fetch("/api/bid", { method: "POST", body: formData })
     const data = await res.json()
@@ -61,19 +66,21 @@ export default function NewBidPage() {
           <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:"8px",padding:"20px",marginBottom:"14px"}}>
             <div style={{fontSize:"10px",fontWeight:"700",color:"#374151",letterSpacing:"1px",marginBottom:"16px"}}>FOTO BARANG</div>
             <label style={{display:"block",cursor:"pointer"}}>
-              {preview ? (
-                <img src={preview} alt="preview" style={{width:"100%",height:"220px",objectFit:"cover",borderRadius:"6px",border:"1px solid #e5e7eb"}} />
+              {previews.length ? (
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"8px"}}>
+                  {previews.map((preview, index) => <img key={preview} src={preview} alt={`preview ${index + 1}`} style={{width:"100%",height:"110px",objectFit:"cover",borderRadius:"6px",border:"1px solid #e5e7eb"}} />)}
+                </div>
               ) : (
                 <div style={{width:"100%",height:"220px",border:"2px dashed #e5e7eb",borderRadius:"6px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#f9fafb"}}>
                   <div style={{fontSize:"18px",fontWeight:"700",color:"#16a34a",marginBottom:"8px"}}>IMG</div>
                   <p style={{fontSize:"13px",fontWeight:"600",color:"#374151",marginBottom:"2px"}}>Klik untuk upload foto</p>
-                  <p style={{fontSize:"11px",color:"#9ca3af"}}>JPG, PNG, WEBP - Max 5MB</p>
+                  <p style={{fontSize:"11px",color:"#9ca3af"}}>JPG, PNG, WEBP - 1 sampai 5 gambar</p>
                 </div>
               )}
-              <input type="file" accept="image/*" onChange={handlePhoto} style={{display:"none"}} />
+              <input type="file" accept="image/*" multiple onChange={handlePhoto} style={{display:"none"}} />
             </label>
-            {preview && (
-              <button type="button" onClick={() => { setPhoto(null); setPreview(null) }}
+            {previews.length > 0 && (
+              <button type="button" onClick={() => { setPhotos([]); setPreviews([]) }}
                 style={{marginTop:"8px",fontSize:"12px",color:"#ef4444",background:"none",border:"none",cursor:"pointer",padding:0}}>
                 Hapus foto
               </button>
@@ -90,6 +97,16 @@ export default function NewBidPage() {
               <label style={{display:"block",fontSize:"11px",fontWeight:"700",color:"#374151",marginBottom:"5px",letterSpacing:"0.3px"}}>DESKRIPSI</label>
               <textarea value={form.description} onChange={e => setForm({...form,description:e.target.value})}
                 style={{...S.input,resize:"vertical"}} placeholder="Kondisi barang, alasan jual, dll" rows={3} />
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginTop:"12px"}}>
+              <div>
+                <label style={{display:"block",fontSize:"11px",fontWeight:"700",color:"#374151",marginBottom:"5px",letterSpacing:"0.3px"}}>NAMA KONTAK</label>
+                <input type="text" value={form.contactName} onChange={e => setForm({...form,contactName:e.target.value})} style={S.input} placeholder="Nama penjual" required />
+              </div>
+              <div>
+                <label style={{display:"block",fontSize:"11px",fontWeight:"700",color:"#374151",marginBottom:"5px",letterSpacing:"0.3px"}}>NOMOR KONTAK</label>
+                <input type="tel" value={form.contactPhone} onChange={e => setForm({...form,contactPhone:e.target.value})} style={S.input} placeholder="081234567890" required />
+              </div>
             </div>
           </div>
 

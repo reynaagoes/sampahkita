@@ -11,13 +11,16 @@ datasource db {
 enum Role {
   HOUSEHOLD
   COLLECTOR
+  RECYCLER
   ADMIN
 }
 
 enum RequestStatus {
   OPEN
   ASSIGNED
-  PICKED_UP
+  ON_THE_WAY
+  ARRIVED
+  WEIGHED
   COMPLETED
   CANCELLED
 }
@@ -31,6 +34,15 @@ enum VerificationStatus {
 enum PointType {
   EARNED
   REDEEMED
+}
+
+enum BatchStatus {
+  AVAILABLE
+  PURCHASE_REQUESTED
+  APPROVED
+  REJECTED
+  DELIVERED
+  COMPLETED
 }
 
 model User {
@@ -56,8 +68,45 @@ model User {
   verification          CollectorVerification?
   notifications         Notification[]
   commodityUpdates      CommodityPrice[]
+  inventory             CollectorInventory[]
+  batchesAsCollector    MaterialBatch[]          @relation("CollectorBatches")
+  batchesAsRecycler     MaterialBatch[]          @relation("RecyclerBatches")
 
   @@map("users")
+}
+
+model CollectorInventory {
+  id              String    @id @default(uuid())
+  collectorId     String
+  wasteType       String
+  availableWeight Decimal   @default(0) @db.Decimal(10, 2)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  collector       User      @relation(fields: [collectorId], references: [id])
+
+  @@unique([collectorId, wasteType], name: "collector_inventory_material")
+  @@map("collector_inventory")
+}
+
+model MaterialBatch {
+  id          String      @id @default(uuid()) @db.VarChar(36)
+  collectorId String
+  recyclerId  String?
+  wasteType   String      @db.VarChar(50)
+  totalWeight Decimal     @db.Decimal(10, 2)
+  pricePerKg  Int
+  grade       String      @default("B") @db.VarChar(20)
+  location    String?     @db.Text
+  description String?     @db.Text
+  status      BatchStatus @default(AVAILABLE)
+  createdAt   DateTime
+  updatedAt   DateTime
+
+  collector   User        @relation("CollectorBatches", fields: [collectorId], references: [id])
+  recycler    User?       @relation("RecyclerBatches", fields: [recyclerId], references: [id])
+
+  @@map("material_batches")
 }
 
 model SampahRequest {
@@ -73,6 +122,7 @@ model SampahRequest {
   latitude        Float?
   longitude       Float?
   addressDetail   String?
+  contactPhone    String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -156,4 +206,61 @@ model Notification {
   user        User      @relation(fields: [userId], references: [id])
 
   @@map("notifications")
+}
+
+model UserBadge {
+  id              String   @id @default(uuid())
+  userId          String
+  badgeName       String
+  thresholdPoints Int
+  earnedAt        DateTime
+
+  @@unique([userId, badgeName], name: "user_badge_unique")
+  @@map("user_badges")
+}
+
+model RewardRedemption {
+  id          String   @id @default(uuid())
+  userId      String
+  rewardCode  String
+  rewardName  String
+  pointsCost  Int
+  status      String
+  createdAt   DateTime
+  updatedAt   DateTime
+
+  @@map("reward_redemptions")
+}
+
+model BidListing {
+  id           String   @id @default(uuid()) @db.VarChar(36)
+  sellerId     String   @db.VarChar(36)
+  title        String
+  description  String?  @db.Text
+  contactName  String?
+  contactPhone String?  @db.VarChar(50)
+  photoUrl     String?  @db.Text
+  minPrice     Int
+  maxPrice     Int
+  currentPrice Int
+  priceStep    Int
+  status       String?  @default("ACTIVE") @db.VarChar(20)
+  winnerId     String?  @db.VarChar(36)
+  expiresAt    DateTime
+  createdAt    DateTime
+  updatedAt    DateTime
+  images       ListingImage[]
+
+  @@map("bid_listings")
+}
+
+model ListingImage {
+  id        String     @id @default(uuid()) @db.VarChar(36)
+  listingId String     @db.VarChar(36)
+  imageUrl  String     @db.Text
+  sortOrder Int        @default(0)
+  createdAt DateTime
+  listing   BidListing @relation(fields: [listingId], references: [id])
+
+  @@map("listing_images")
 }

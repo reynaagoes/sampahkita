@@ -1,7 +1,7 @@
 "use client"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import Navbar from "@/components/Navbar"
 
 type PendingCollector = {
@@ -21,7 +21,7 @@ type RecentRequest = {
 }
 
 const STATUS_DOT: Record<string, string> = {
-  OPEN: "#f59e0b", ASSIGNED: "#3b82f6", COMPLETED: "#16a34a", CANCELLED: "#ef4444",
+  OPEN: "#f59e0b", ASSIGNED: "#3b82f6", ON_THE_WAY: "#8b5cf6", ARRIVED: "#7c3aed", WEIGHED: "#2563eb", COMPLETED: "#16a34a", CANCELLED: "#ef4444",
 }
 
 export default function AdminDashboard() {
@@ -32,15 +32,9 @@ export default function AdminDashboard() {
   const [recentRequests, setRecent] = useState<RecentRequest[]>([])
   const [tab, setTab] = useState("overview")
   const [loading, setLoading] = useState(true)
-  const role = String(session?.user?.role || "")
+  const role = String(session?.user?.role || "").toUpperCase()
 
-  useEffect(() => {
-    if (status === "unauthenticated") router.push("/login")
-    if (status === "authenticated" && role !== "ADMIN") router.replace(role === "HOUSEHOLD" ? "/household" : role === "COLLECTOR" ? "/collector" : "/recycler")
-  }, [status, role, router])
-  useEffect(() => { if (status === "authenticated" && role === "ADMIN") fetchData() }, [status, role])
-
-  async function fetchData() {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     const [s, c, r] = await Promise.all([
       fetch("/api/admin/stats").then(x => x.json()),
@@ -51,7 +45,13 @@ export default function AdminDashboard() {
     setPending(c.collectors || [])
     setRecent(r.requests || [])
     setLoading(false)
-  }
+  }, [])
+
+  useEffect(() => {
+    if (status === "unauthenticated") router.push("/login")
+    if (status === "authenticated" && role !== "ADMIN") router.replace(role === "HOUSEHOLD" ? "/household" : role === "COLLECTOR" ? "/collector" : "/recycler")
+  }, [status, role, router])
+  useEffect(() => { if (status === "authenticated" && role === "ADMIN") void Promise.resolve().then(fetchData) }, [status, role, fetchData])
 
   async function verify(collectorId: string, action: "APPROVED" | "REJECTED") {
     await fetch("/api/admin/collectors", {
@@ -158,7 +158,7 @@ export default function AdminDashboard() {
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px"}}>
                 <div style={{border:"1px solid #f3f4f6",borderRadius:"6px",padding:"16px"}}>
                   <div style={{fontSize:"10px",fontWeight:"700",color:"#374151",letterSpacing:"1px",marginBottom:"12px"}}>STATUS TRANSAKSI</div>
-                  {["OPEN","ASSIGNED","COMPLETED","CANCELLED"].map(s => {
+                  {["OPEN","ASSIGNED","ON_THE_WAY","ARRIVED","WEIGHED","COMPLETED","CANCELLED"].map(s => {
                     const count = recentRequests.filter(r => r.status === s).length
                     return (
                       <div key={s} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"1px solid #f9fafb"}}>

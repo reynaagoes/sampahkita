@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
 import pool from "@/lib/db"
+import { getAppSession, getSessionRole } from "@/lib/auth-session"
 
 export async function GET() {
   try {
-    const session = await getServerSession()
+    const session = await getAppSession()
     if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    if (session.user.role !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    if (getSessionRole(session.user.role) !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     const [collectors] = await pool.execute(
       `SELECT u.id, u.fullName, u.email, u.phone, cv.status
        FROM users u
@@ -23,9 +23,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession()
+    const session = await getAppSession()
     if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    if (session.user.role !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    if (getSessionRole(session.user.role) !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     const { collectorId, action } = await req.json()
 
     await pool.execute(

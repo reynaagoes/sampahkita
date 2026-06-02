@@ -16,7 +16,7 @@ const WASTE_TYPES = [
 export default function NewBatchPage() {
   const { data: session } = useSession()
   const router = useRouter()
-  const [form, setForm] = useState({ wasteType: "plastik", totalWeight: "", pricePerKg: "2500", location: "", description: "" })
+  const [form, setForm] = useState({ wasteType: "plastik", totalWeight: "", pricePerKg: "2500", grade: "B", location: "", description: "" })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -32,7 +32,7 @@ export default function NewBatchPage() {
     const res = await fetch("/api/batches", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ wasteType: form.wasteType, totalWeight: parseFloat(form.totalWeight), pricePerKg: parseInt(form.pricePerKg), location: form.location, description: form.description }),
+      body: JSON.stringify({ wasteType: form.wasteType, totalWeight: parseFloat(form.totalWeight), pricePerKg: parseInt(form.pricePerKg), grade: form.grade, location: form.location, description: form.description }),
     })
     const data = await res.json()
     if (!res.ok) { setError(data.error || "Terjadi kesalahan"); setLoading(false); return }
@@ -83,6 +83,12 @@ export default function NewBatchPage() {
                 <label style={{display:"block",fontSize:"11px",fontWeight:"700",color:"#374151",marginBottom:"5px",letterSpacing:"0.3px"}}>HARGA/KG (RP)</label>
                 <input type="number" min="100" value={form.pricePerKg} onChange={e => setForm({...form,pricePerKg:e.target.value})} style={S.input} required />
               </div>
+            </div>
+            <div style={{marginBottom:"12px"}}>
+              <label style={{display:"block",fontSize:"11px",fontWeight:"700",color:"#374151",marginBottom:"5px",letterSpacing:"0.3px"}}>GRADE MATERIAL</label>
+              <select value={form.grade} onChange={e => setForm({...form,grade:e.target.value})} style={S.input}>
+                <option value="A">Grade A</option><option value="B">Grade B</option><option value="C">Grade C</option>
+              </select>
             </div>
             <div style={{marginBottom:"12px"}}>
               <label style={{display:"block",fontSize:"11px",fontWeight:"700",color:"#374151",marginBottom:"5px",letterSpacing:"0.3px"}}>LOKASI MATERIAL</label>

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
 import pool from "@/lib/db"
+import { getAppSession, getSessionRole } from "@/lib/auth-session"
 
 export async function GET() {
   try {
-    const session = await getServerSession()
+    const session = await getAppSession()
     if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    if (session.user.role !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    if (getSessionRole(session.user.role) !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     const [[users], [pending], [transactions], [points]] = await Promise.all([
       pool.execute("SELECT COUNT(*) as count FROM users") as any,
       pool.execute("SELECT COUNT(*) as count FROM collector_verifications WHERE status = ?", ["PENDING"]) as any,

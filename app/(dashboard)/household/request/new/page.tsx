@@ -5,20 +5,13 @@ import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import Navbar from "@/components/Navbar"
 import RoleGate from "@/components/RoleGate"
-
-const WASTE_TYPES = [
-  { id: "plastik",    label: "Plastik",    poin: 500,  desc: "Botol, kantong, wadah" },
-  { id: "kertas",     label: "Kertas",     poin: 300,  desc: "Koran, kardus, buku" },
-  { id: "logam",      label: "Logam",      poin: 800,  desc: "Kaleng, besi, tembaga" },
-  { id: "kaca",       label: "Kaca",       poin: 400,  desc: "Botol kaca, cermin" },
-  { id: "elektronik", label: "Elektronik", poin: 1000, desc: "HP, kabel, baterai" },
-]
+import { WASTE_MATERIALS } from "@/lib/points"
 
 export default function NewRequestPage() {
   const { data: session } = useSession()
   const router = useRouter()
   const [selectedTypes, setSelectedTypes] = useState<string[]>([])
-  const [form, setForm] = useState({ estimatedWeight: "", addressDetail: "", notes: "" })
+  const [form, setForm] = useState({ estimatedWeight: "", addressDetail: "", contactPhone: "", notes: "" })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -31,17 +24,18 @@ export default function NewRequestPage() {
     if (selectedTypes.length === 0) { setError("Pilih minimal satu jenis sampah"); return }
     setLoading(true)
     setError("")
+    if (!form.contactPhone.trim()) { setError("Nomor yang dapat dihubungi wajib diisi"); return }
     const res = await fetch("/api/requests", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sampahTypes: JSON.stringify(selectedTypes), estimatedWeight: parseFloat(form.estimatedWeight) || null, addressDetail: form.addressDetail, notes: form.notes }),
+      body: JSON.stringify({ sampahTypes: JSON.stringify(selectedTypes), estimatedWeight: parseFloat(form.estimatedWeight) || null, addressDetail: form.addressDetail, contactPhone: form.contactPhone, notes: form.notes }),
     })
     const data = await res.json()
     if (!res.ok) { setError(data.error || "Terjadi kesalahan"); setLoading(false); return }
     router.push("/household")
   }
 
-  const estPoints = selectedTypes.reduce((sum, t) => sum + (WASTE_TYPES.find(w => w.id === t)?.poin || 0), 0) * (parseFloat(form.estimatedWeight) || 1)
+  const estPoints = selectedTypes.reduce((sum, t) => sum + (WASTE_MATERIALS.find(w => w.id === t)?.points || 0), 0) * (parseFloat(form.estimatedWeight) || 1)
   const S: Record<"input", CSSProperties> = { input: {width:"100%",padding:"10px 14px",borderRadius:"6px",border:"1px solid #e5e7eb",fontSize:"13px",outline:"none",boxSizing:"border-box",color:"#111"} }
 
   return (
@@ -62,7 +56,7 @@ export default function NewRequestPage() {
         <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:"8px",padding:"20px",marginBottom:"14px"}}>
           <div style={{fontSize:"10px",fontWeight:"700",color:"#374151",letterSpacing:"1px",marginBottom:"14px"}}>JENIS SAMPAH</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>
-            {WASTE_TYPES.map(type => (
+            {WASTE_MATERIALS.map(type => (
               <button key={type.id} type="button" onClick={() => toggleType(type.id)}
                 style={{padding:"12px 14px",borderRadius:"6px",border: selectedTypes.includes(type.id) ? "1.5px solid #111" : "1px solid #e5e7eb",background: selectedTypes.includes(type.id) ? "#f9fafb" : "#fff",textAlign:"left",cursor:"pointer",transition:"all 0.1s"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"3px"}}>
@@ -70,7 +64,7 @@ export default function NewRequestPage() {
                   {selectedTypes.includes(type.id) && <div style={{width:"6px",height:"6px",borderRadius:"50%",background:"#16a34a",marginTop:"3px"}}></div>}
                 </div>
                 <p style={{fontSize:"11px",color:"#9ca3af",marginBottom:"4px"}}>{type.desc}</p>
-                <p style={{fontSize:"11px",fontWeight:"600",color:"#16a34a"}}>{type.poin.toLocaleString()} poin/kg</p>
+                <p style={{fontSize:"11px",fontWeight:"600",color:"#16a34a"}}>{type.points.toLocaleString()} poin/kg</p>
               </button>
             ))}
           </div>
@@ -85,6 +79,10 @@ export default function NewRequestPage() {
           <div style={{marginBottom:"12px"}}>
             <label style={{display:"block",fontSize:"12px",fontWeight:"600",color:"#374151",marginBottom:"5px",letterSpacing:"0.3px"}}>ALAMAT PENJEMPUTAN</label>
             <textarea value={form.addressDetail} onChange={e => setForm({...form, addressDetail: e.target.value})} style={{...S.input,resize:"vertical"}} placeholder="Contoh: Jl. Merdeka No. 10, RT 03/RW 05" rows={3} required />
+          </div>
+          <div style={{marginBottom:"12px"}}>
+            <label style={{display:"block",fontSize:"12px",fontWeight:"600",color:"#374151",marginBottom:"5px",letterSpacing:"0.3px"}}>NOMOR YANG DAPAT DIHUBUNGI</label>
+            <input type="tel" value={form.contactPhone} onChange={e => setForm({...form, contactPhone: e.target.value})} style={S.input} placeholder="Contoh: 081234567890" required />
           </div>
           <div>
             <label style={{display:"block",fontSize:"12px",fontWeight:"600",color:"#374151",marginBottom:"5px",letterSpacing:"0.3px"}}>CATATAN (OPSIONAL)</label>

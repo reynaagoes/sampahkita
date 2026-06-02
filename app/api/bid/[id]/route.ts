@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
 import pool from "@/lib/db"
 import { v4 as uuidv4 } from "uuid"
+import { getAppSession } from "@/lib/auth-session"
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const session = await getServerSession()
+    const session = await getAppSession()
     if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const [users] = await pool.execute("SELECT id, fullName FROM users WHERE email = ?", [session.user.email])
@@ -66,7 +66,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       "SELECT b.*, u.fullName as bidderName FROM bids b JOIN users u ON b.bidderId = u.id WHERE b.listingId = ? ORDER BY b.createdAt DESC",
       [id]
     )
-    return NextResponse.json({ listing: listing[0], bidHistory })
+    const [images] = await pool.execute(
+      "SELECT id, imageUrl, sortOrder FROM listing_images WHERE listingId = ? ORDER BY sortOrder ASC",
+      [id]
+    )
+    return NextResponse.json({ listing: listing[0], bidHistory, images })
   } catch (error) {
     return NextResponse.json({ error: "Server error" }, { status: 500 })
   }

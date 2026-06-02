@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "migrate:workflow": "node scripts/migrate-workflow.js",
+    "seed:demo": "node scripts/seed-demo.js"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

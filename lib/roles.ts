@@ -6,5 +6,5 @@ export const DASHBOARD_BY_ROLE: Record<string, string> = {
 }
 
 export function getDashboardPath(role?: string | null) {
-  return DASHBOARD_BY_ROLE[String(role || "")] || "/login"
+  return DASHBOARD_BY_ROLE[String(role || "").toUpperCase()] || "/login"
 }

@@ -6,8 +6,12 @@ import { v4 as uuidv4 } from "uuid"
 export async function POST(req: Request) {
   try {
     const { email, password, fullName, role, phone } = await req.json()
-    if (!email || !password || !fullName || !role) {
+    const normalizedRole = String(role || "").toUpperCase()
+    if (!email || !password || !fullName || !normalizedRole) {
       return NextResponse.json({ error: "Semua field wajib diisi" }, { status: 400 })
+    }
+    if (!["HOUSEHOLD", "COLLECTOR", "RECYCLER"].includes(normalizedRole)) {
+      return NextResponse.json({ error: "Role registrasi tidak valid" }, { status: 400 })
     }
     const [existing] = await pool.execute("SELECT id FROM users WHERE email = ?", [email]) as any[]
     if (existing.length > 0) {
@@ -17,9 +21,9 @@ export async function POST(req: Request) {
     const userId = uuidv4()
     await pool.execute(
       "INSERT INTO users (id, email, password, fullName, role, phone, isVerified, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
-      [userId, email, hashedPassword, fullName, role, phone || null, false]
+      [userId, email, hashedPassword, fullName, normalizedRole, phone || null, false]
     )
-    if (role === "COLLECTOR") {
+    if (normalizedRole === "COLLECTOR") {
       await pool.execute(
         "INSERT INTO collector_verifications (id, collectorId, status, createdAt, updatedAt) VALUES (?, ?, ?, NOW(), NOW())",
         [uuidv4(), userId, "PENDING"]

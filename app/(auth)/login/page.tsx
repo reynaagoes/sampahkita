@@ -42,7 +42,10 @@ export default function LoginPage() {
         <BrandLogo href="/login" dark />
         <div className="login-nav-links">
           <a href="#layanan">Layanan</a>
+          <a href="#cara-kerja">Cara Kerja</a>
           <a href="#manfaat">Manfaat</a>
+          <a href="#pasarcuan">PasarCuan</a>
+          <a href="#tentang-kami">Tentang Kami</a>
           <Link href="/register" className="login-register-link">Daftar Gratis</Link>
         </div>
       </nav>
@@ -59,7 +62,7 @@ export default function LoginPage() {
             tetap mudah, teratur, dan memberi dampak baik untuk lingkungan.
           </p>
 
-          <div className="login-feature-list" id="layanan">
+          <div className="login-feature-list">
             <div className="login-feature-card">
               <span className="feature-dot" />
               <div>
@@ -74,11 +77,6 @@ export default function LoginPage() {
                 <small>Dapatkan nilai dari sampah yang dijemput.</small>
               </div>
             </div>
-          </div>
-
-          <div className="login-secondary-note" id="manfaat">
-            <strong>PasarCuan</strong>
-            <span>Fitur tambahan untuk barang yang masih layak dan material daur ulang.</span>
           </div>
         </div>
 
@@ -122,6 +120,36 @@ export default function LoginPage() {
             <Link href="/register">Buat akun</Link>
           </div>
         </form>
+      </section>
+
+      <section id="layanan" className="login-info-section">
+        <span className="section-kicker">Layanan</span>
+        <h2>Request angkut sampah gratis dari rumah.</h2>
+        <p>Rumah tangga membuat request, pengepul mengambil pickup, berat aktual divalidasi, lalu poin masuk otomatis.</p>
+      </section>
+
+      <section id="cara-kerja" className="login-info-section">
+        <span className="section-kicker">Cara Kerja</span>
+        <h2>Alur sederhana tanpa chat realtime.</h2>
+        <p>Household membuat request, collector menjalankan pickup bertahap, material masuk inventori, lalu recycler membeli batch material.</p>
+      </section>
+
+      <section id="manfaat" className="login-info-section">
+        <span className="section-kicker">Manfaat</span>
+        <h2>Poin, badge, dan reward untuk kontribusi rutin.</h2>
+        <p>Setiap pickup selesai memberi poin sesuai jenis dan berat sampah yang tervalidasi.</p>
+      </section>
+
+      <section id="pasarcuan" className="login-info-section">
+        <span className="section-kicker">PasarCuan</span>
+        <h2>Fitur pendukung untuk barang layak pakai.</h2>
+        <p>PasarCuan membantu pengguna menjual barang bernilai, sementara layanan utama tetap request angkut sampah gratis.</p>
+      </section>
+
+      <section id="tentang-kami" className="login-info-section">
+        <span className="section-kicker">Tentang Kami</span>
+        <h2>Platform ekonomi sirkular CuanSampah.</h2>
+        <p>CuanSampah menghubungkan rumah tangga, pengepul, dan recycler agar sampah terkelola sebagai material bernilai.</p>
       </section>
     </main>
   )

@@ -1,13 +1,16 @@
 ﻿"use client"
 
 import Navbar from "@/components/Navbar"
+import PickupTimeline from "@/components/PickupTimeline"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { formatWasteTypes, getRequestStatus, getRequestStatusLabel } from "@/lib/request-status"
+import { getWhatsAppUrl } from "@/lib/phone"
 
 type RequestItem = {
   id?: string
-  status?: keyof typeof STATUS | string
+  status?: string
   createdAt?: string
   scheduledAt?: string
   address?: string
@@ -18,24 +21,21 @@ type RequestItem = {
   category?: string
   estimatedWeight?: number | string
   actualWeight?: number | string
+  pointsAwarded?: number | string
+  collectorName?: string
+  collectorPhone?: string
+  collector?: {
+    id?: string
+    fullName?: string | null
+    phone?: string | null
+  } | null
+  contactPhone?: string
+  updatedAt?: string
 }
-
-const STATUS = {
-  OPEN: { label: "Menunggu Penjemputan", tone: "warning" },
-  ASSIGNED: { label: "Pengepul Menuju Lokasi", tone: "info" },
-  PICKED_UP: { label: "Sedang Diproses", tone: "process" },
-  COMPLETED: { label: "Selesai", tone: "success" },
-  CANCELLED: { label: "Dibatalkan", tone: "danger" },
-} as const
 
 function formatDate(value?: string) {
   if (!value) return "Belum dijadwalkan"
   return new Date(value).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
-}
-
-function getStatus(item: RequestItem) {
-  const key = item.status || "OPEN"
-  return STATUS[key as keyof typeof STATUS] || { label: key, tone: "info" }
 }
 
 export default function HouseholdDashboard() {
@@ -44,7 +44,7 @@ export default function HouseholdDashboard() {
   const [requests, setRequests] = useState<RequestItem[]>([])
   const [points, setPoints] = useState(0)
   const [loading, setLoading] = useState(true)
-  const role = String(session?.user?.role || "")
+  const role = String(session?.user?.role || "").toUpperCase()
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login")
@@ -68,11 +68,12 @@ export default function HouseholdDashboard() {
     return <div className="page-loader">Memuat dashboard...</div>
   }
 
-  const active = requests.filter((item) => ["OPEN", "ASSIGNED", "PICKED_UP"].includes(String(item.status))).length
+  const active = requests.filter((item) => ["OPEN", "ASSIGNED", "ON_THE_WAY", "ARRIVED", "WEIGHED"].includes(String(item.status))).length
   const done = requests.filter((item) => item.status === "COMPLETED").length
   const totalWeight = requests.reduce((sum, item) => sum + Number(item.actualWeight || item.estimatedWeight || 0), 0)
   const co2 = (done * 2.5).toFixed(1)
   const firstName = session?.user?.name?.split(" ")[0] || "JOO"
+  const activeRequest = requests.find((item) => !["COMPLETED", "CANCELLED"].includes(String(item.status || "").toUpperCase()))
 
   return (
     <main className="app-page">
@@ -128,6 +129,68 @@ export default function HouseholdDashboard() {
           </div>
         </div>
 
+        <section className="classic-panel pickup-tracking-card">
+          <div className="panel-head">
+            <div>
+              <h2>Tracking Pickup Terbaru</h2>
+              <p>Pantau progress penjemputan seperti tracking order.</p>
+            </div>
+          </div>
+
+          {!activeRequest ? (
+            <div className="empty-state">
+              <div className="empty-icon">+</div>
+              <h3>Belum ada pickup aktif</h3>
+              <p>Belum ada pickup aktif. Buat request angkut sampah untuk mulai tracking.</p>
+            </div>
+          ) : (
+            <>
+              <div className="pickup-tracking-layout">
+                <div className="pickup-action-card">
+                  <span className="data-eyebrow">Status saat ini</span>
+                  <h3>{getRequestStatusLabel(activeRequest.status)}</h3>
+                  <dl className="pickup-detail-list">
+                    <div>
+                      <dt>Jenis sampah</dt>
+                      <dd>{activeRequest.wasteType || activeRequest.type || activeRequest.category || formatWasteTypes(activeRequest.sampahTypes)}</dd>
+                    </div>
+                    <div>
+                      <dt>Alamat</dt>
+                      <dd>{activeRequest.addressDetail || activeRequest.address || "Alamat penjemputan tersimpan"}</dd>
+                    </div>
+                    <div>
+                      <dt>Estimasi berat</dt>
+                      <dd>{activeRequest.estimatedWeight ? `${activeRequest.estimatedWeight} kg` : "Belum diisi"}</dd>
+                    </div>
+                    <div>
+                      <dt>Berat aktual</dt>
+                      <dd>{activeRequest.actualWeight ? `${activeRequest.actualWeight} kg` : "Menunggu penimbangan"}</dd>
+                    </div>
+                    <div>
+                      <dt>Poin</dt>
+                      <dd>{Number(activeRequest.pointsAwarded || 0) > 0 ? `${Number(activeRequest.pointsAwarded).toLocaleString("id-ID")} poin` : "Diberikan setelah pickup selesai"}</dd>
+                    </div>
+                  </dl>
+                </div>
+
+                <PickupTimeline
+                  status={activeRequest.status || "OPEN"}
+                  createdAt={activeRequest.createdAt}
+                  updatedAt={activeRequest.updatedAt}
+                  collector={activeRequest.collector || {
+                    fullName: activeRequest.collectorName || null,
+                    phone: activeRequest.collectorPhone || null,
+                  }}
+                  actualWeight={activeRequest.actualWeight}
+                  pointsAwarded={activeRequest.pointsAwarded}
+                />
+              </div>
+
+              <PickupContactCard request={activeRequest} />
+            </>
+          )}
+        </section>
+
         <section className="dashboard-main-grid">
           <div className="classic-panel request-panel">
             <div className="panel-head">
@@ -149,7 +212,7 @@ export default function HouseholdDashboard() {
             ) : (
               <div className="request-list">
                 {requests.slice(0, 4).map((item, index) => {
-                  const statusInfo = getStatus(item)
+                  const statusInfo = getRequestStatus(item.status)
                   return (
                     <div className="request-row" key={item.id || index}>
                       <div className="date-card">
@@ -157,8 +220,10 @@ export default function HouseholdDashboard() {
                         <span>{formatDate(item.scheduledAt || item.createdAt).split(" ").slice(1).join(" ")}</span>
                       </div>
                       <div>
-                        <h3>{item.wasteType || item.type || item.category || item.sampahTypes || "Sampah Rumah Tangga"}</h3>
+                        <h3>{item.wasteType || item.type || item.category || formatWasteTypes(item.sampahTypes)}</h3>
                         <p>{item.addressDetail || item.address || "Alamat penjemputan tersimpan"}</p>
+                        {(item.collector?.fullName || item.collectorName) && <p>Pengepul: {item.collector?.fullName || item.collectorName} {(item.collector?.phone || item.collectorPhone) && <a href={`tel:${item.collector?.phone || item.collectorPhone}`}>- Hubungi Pengepul</a>}</p>}
+                        {item.contactPhone && <p>Kontak pickup: {item.contactPhone}</p>}
                       </div>
                       <span className={`status-pill ${statusInfo.tone}`}>{statusInfo.label}</span>
                     </div>
@@ -191,5 +256,35 @@ export default function HouseholdDashboard() {
 
       </section>
     </main>
+  )
+}
+
+function PickupContactCard({ request }: { request: RequestItem }) {
+  const collectorName = request.collector?.fullName || request.collectorName
+  const collectorPhone = request.collector?.phone || request.collectorPhone
+  const waUrl = getWhatsAppUrl(collectorPhone)
+
+  if (!collectorName && !collectorPhone) {
+    return (
+      <div className="pickup-contact-card">
+        <div>
+          <strong>Pengepul belum menerima request ini.</strong>
+          <p>Informasi kontak akan muncul setelah request diambil pengepul.</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="pickup-contact-card">
+      <div>
+        <strong>Pengepul: {collectorName || "Nama belum tersedia"}</strong>
+        <p>Nomor: {collectorPhone || "Nomor belum tersedia"}</p>
+      </div>
+      <div className="pickup-contact-actions">
+        {collectorPhone ? <a className="green-small-btn" href={`tel:${collectorPhone}`}>Hubungi Pengepul</a> : <span className="status-pill warning">Nomor belum tersedia</span>}
+        {waUrl && <a className="outline-btn" href={waUrl} target="_blank" rel="noreferrer">WhatsApp</a>}
+      </div>
+    </div>
   )
 }

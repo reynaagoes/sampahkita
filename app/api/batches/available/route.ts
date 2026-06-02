@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
 import pool from "@/lib/db"
+import { getAppSession, getSessionRole } from "@/lib/auth-session"
 
 export async function GET() {
   try {
-    const session = await getServerSession()
+    const session = await getAppSession()
     if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    if (session.user.role !== "RECYCLER") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    if (getSessionRole(session.user.role) !== "RECYCLER") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
     const [batches] = await pool.execute(
-      "SELECT mb.*, u.fullName as collectorName FROM material_batches mb JOIN users u ON mb.collectorId = u.id WHERE mb.status = ? ORDER BY mb.createdAt DESC",
+      "SELECT mb.*, u.fullName as collectorName, u.phone as collectorPhone FROM material_batches mb JOIN users u ON mb.collectorId = u.id WHERE mb.status = ? ORDER BY mb.createdAt DESC",
       ["AVAILABLE"]
     ) as any[]
 
