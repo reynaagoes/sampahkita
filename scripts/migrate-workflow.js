@@ -42,9 +42,55 @@ async function main() {
     await db.execute("ALTER TABLE bid_listings ADD COLUMN contactPhone VARCHAR(50) NULL AFTER contactName")
   }
   await db.execute('UPDATE material_batches SET status = "COMPLETED" WHERE status = "SOLD"')
+  if (!(await hasColumn(db, "material_batches", "offerPrice"))) {
+    await db.execute("ALTER TABLE material_batches ADD COLUMN offerPrice INT NULL AFTER status")
+  }
+  if (!(await hasColumn(db, "material_batches", "counterPrice"))) {
+    await db.execute("ALTER TABLE material_batches ADD COLUMN counterPrice INT NULL AFTER offerPrice")
+  }
+  if (!(await hasColumn(db, "material_batches", "agreedPrice"))) {
+    await db.execute("ALTER TABLE material_batches ADD COLUMN agreedPrice INT NULL AFTER counterPrice")
+  }
+  if (!(await hasColumn(db, "material_batches", "platformFee"))) {
+    await db.execute("ALTER TABLE material_batches ADD COLUMN platformFee INT NULL AFTER agreedPrice")
+  }
+  if (!(await hasColumn(db, "material_batches", "collectorEarning"))) {
+    await db.execute("ALTER TABLE material_batches ADD COLUMN collectorEarning INT NULL AFTER platformFee")
+  }
+  if (!(await hasColumn(db, "material_batches", "recyclerContactName"))) {
+    await db.execute("ALTER TABLE material_batches ADD COLUMN recyclerContactName VARCHAR(191) NULL AFTER recyclerId")
+  }
+  if (!(await hasColumn(db, "material_batches", "recyclerContactPhone"))) {
+    await db.execute("ALTER TABLE material_batches ADD COLUMN recyclerContactPhone VARCHAR(50) NULL AFTER recyclerContactName")
+  }
+  if (!(await hasColumn(db, "material_batches", "recyclerDeliveryAddress"))) {
+    await db.execute("ALTER TABLE material_batches ADD COLUMN recyclerDeliveryAddress TEXT NULL AFTER recyclerContactPhone")
+  }
+  if (!(await hasColumn(db, "material_batches", "offerNote"))) {
+    await db.execute("ALTER TABLE material_batches ADD COLUMN offerNote TEXT NULL AFTER recyclerDeliveryAddress")
+  }
+  if (!(await hasColumn(db, "material_batches", "counterNote"))) {
+    await db.execute("ALTER TABLE material_batches ADD COLUMN counterNote TEXT NULL AFTER offerNote")
+  }
+  if (!(await hasColumn(db, "material_batches", "deliveryNote"))) {
+    await db.execute("ALTER TABLE material_batches ADD COLUMN deliveryNote TEXT NULL AFTER counterNote")
+  }
+  if (!(await hasColumn(db, "material_batches", "deliveredAt"))) {
+    await db.execute("ALTER TABLE material_batches ADD COLUMN deliveredAt DATETIME NULL AFTER deliveryNote")
+  }
+  if (!(await hasColumn(db, "material_batches", "completedAt"))) {
+    await db.execute("ALTER TABLE material_batches ADD COLUMN completedAt DATETIME NULL AFTER deliveredAt")
+  }
+
   await db.execute(
     `ALTER TABLE material_batches
-     MODIFY status ENUM("AVAILABLE","PURCHASE_REQUESTED","APPROVED","REJECTED","DELIVERED","COMPLETED")
+     MODIFY status ENUM("AVAILABLE","PURCHASE_REQUESTED","OFFER_SUBMITTED","COUNTER_OFFERED","APPROVED","REJECTED","IN_DELIVERY","DELIVERED","COMPLETED","CANCELLED")
+     NOT NULL DEFAULT "AVAILABLE"`
+  )
+  await db.execute('UPDATE material_batches SET status = "OFFER_SUBMITTED" WHERE status = "PURCHASE_REQUESTED"')
+  await db.execute(
+    `ALTER TABLE material_batches
+     MODIFY status ENUM("AVAILABLE","OFFER_SUBMITTED","COUNTER_OFFERED","APPROVED","REJECTED","IN_DELIVERY","DELIVERED","COMPLETED","CANCELLED")
      NOT NULL DEFAULT "AVAILABLE"`
   )
 

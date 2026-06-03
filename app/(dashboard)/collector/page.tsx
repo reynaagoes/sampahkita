@@ -1,10 +1,12 @@
 "use client"
 
 import Navbar from "@/components/Navbar"
+import BatchPurchaseTimeline from "@/components/BatchPurchaseTimeline"
 import PickupTimeline from "@/components/PickupTimeline"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
+import { normalizeBatchStatus, getBatchStatusLabel } from "@/lib/batch-status"
 import { formatWasteTypes, getRequestStatus, getRequestStatusLabel } from "@/lib/request-status"
 
 type PickupRequest = {
@@ -28,6 +30,22 @@ type MaterialBatch = {
   pricePerKg: number | string
   status: string
   recyclerName?: string | null
+  recyclerPhone?: string | null
+  recyclerAddress?: string | null
+  recyclerContactName?: string | null
+  recyclerContactPhone?: string | null
+  recyclerDeliveryAddress?: string | null
+  offerPrice?: number | string | null
+  counterPrice?: number | string | null
+  agreedPrice?: number | string | null
+  platformFee?: number | string | null
+  collectorEarning?: number | string | null
+  offerNote?: string | null
+  counterNote?: string | null
+  deliveryNote?: string | null
+  deliveredAt?: string | null
+  completedAt?: string | null
+  updatedAt?: string | null
 }
 
 type InventoryItem = {
@@ -179,6 +197,7 @@ export default function CollectorDashboard() {
   const activePickups = myPickups.filter((request) => request.status !== "COMPLETED").length
   const completedPickups = myPickups.filter((request) => request.status === "COMPLETED")
   const totalCollected = completedPickups.reduce((total, request) => total + Number(request.actualWeight || 0), 0)
+  const purchaseCount = purchaseRequests.filter((batch) => normalizeBatchStatus(batch.status) !== "AVAILABLE").length
 
   return (
     <main className="app-page">
@@ -211,7 +230,7 @@ export default function CollectorDashboard() {
             <button className={tab === "mypickups" ? "active" : ""} type="button" onClick={() => setTab("mypickups")}>Pickup Saya <span>{myPickups.length}</span></button>
             <button className={tab === "inventory" ? "active" : ""} type="button" onClick={() => setTab("inventory")}>Inventori Material <span>{inventory.length}</span></button>
             <button className={tab === "batches" ? "active" : ""} type="button" onClick={() => setTab("batches")}>Batch Material <span>{batches.length}</span></button>
-            <button className={tab === "purchases" ? "active" : ""} type="button" onClick={() => setTab("purchases")}>Permintaan Pembelian <span>{purchaseRequests.filter((batch) => batch.status === "PURCHASE_REQUESTED").length}</span></button>
+            <button className={tab === "purchases" ? "active" : ""} type="button" onClick={() => setTab("purchases")}>Permintaan Pembelian <span>{purchaseCount}</span></button>
           </div>
 
           {loading ? (
@@ -239,15 +258,113 @@ export default function CollectorDashboard() {
             inventory.length ? inventory.map((item) => <article className="data-row" key={item.id}><div className="data-row-copy"><span className="data-eyebrow">{item.wasteType}</span><h3>{Number(item.availableWeight).toFixed(1)} kg tersedia</h3><p>Stok bertambah setelah pickup selesai dan berkurang ketika batch dibuat.</p></div></article>) : <EmptyState title="Inventori masih kosong" text="Material dari pickup selesai akan masuk ke sini." />
           ) : tab === "batches" ? (
             batches.length ? <>{batches.map((batch) => (
-              <article className="data-row" key={batch.id}><div className="data-row-copy"><span className="data-eyebrow">{batch.wasteType}</span><h3>{batch.totalWeight} kg material</h3><p>Rp {Number(batch.pricePerKg).toLocaleString("id-ID")}/kg - status {batch.status.toLowerCase()}</p></div><span className="status-pill success">{batch.status}</span></article>
+              <article className="data-row" key={batch.id}><div className="data-row-copy"><span className="data-eyebrow">{batch.wasteType}</span><h3>{batch.totalWeight} kg material</h3><p>Rp {Number(batch.pricePerKg).toLocaleString("id-ID")}/kg - status {getBatchStatusLabel(batch.status)}</p></div><span className="status-pill success">{getBatchStatusLabel(batch.status)}</span></article>
             ))}<div className="workspace-footer"><button className="green-small-btn" type="button" onClick={() => router.push("/collector/batch/new")}>Buat Batch Material</button></div></> :
               <div className="empty-state"><div className="empty-icon">+</div><h3>Siapkan batch material</h3><p>Buat listing material setelah sampah terkumpul dan terpilah.</p><button className="green-small-btn" type="button" onClick={() => router.push("/collector/batch/new")}>Buat Batch Material</button></div>
           ) : purchaseRequests.length ? purchaseRequests.map((batch) => (
-            <article className="data-row" key={batch.id}><div className="data-row-copy"><span className="data-eyebrow">{batch.wasteType}</span><h3>{batch.totalWeight} kg - {batch.recyclerName || "Recycler"}</h3><p>Rp {Number(batch.pricePerKg).toLocaleString("id-ID")}/kg - status {batch.status}</p></div><div className="row-actions">{batch.status === "PURCHASE_REQUESTED" && <><button className="outline-btn" type="button" onClick={() => void updateBatch(batch.id, "decision", { action: "REJECT" })}>Tolak</button><button className="green-small-btn" type="button" onClick={() => void updateBatch(batch.id, "decision", { action: "APPROVE" })}>Setujui</button></>}{batch.status === "APPROVED" && <button className="green-small-btn" type="button" onClick={() => void updateBatch(batch.id, "deliver")}>Material Diserahkan</button>}<span className="status-pill info">{batch.status}</span></div></article>
+            <PurchaseRequestCard
+              key={batch.id}
+              batch={batch}
+              onDecision={(decision) => void updateBatch(batch.id, "decision", { decision })}
+              onCounter={(counterPrice, counterNote) => void updateBatch(batch.id, "counter", { counterPrice: Number(counterPrice), counterNote })}
+              onShip={() => void updateBatch(batch.id, "ship")}
+              onDeliver={(deliveryNote) => void updateBatch(batch.id, "deliver", { deliveryNote })}
+            />
           )) : <EmptyState title="Belum ada permintaan pembelian" text="Pengajuan dari recycler akan muncul di sini." />}
         </section>
       </section>
     </main>
+  )
+}
+
+function PurchaseRequestCard({
+  batch,
+  onDecision,
+  onCounter,
+  onShip,
+  onDeliver,
+}: {
+  batch: MaterialBatch
+  onDecision: (decision: "APPROVE" | "REJECT") => void
+  onCounter: (counterPrice: string, counterNote: string) => void
+  onShip: () => void
+  onDeliver: (deliveryNote: string) => void
+}) {
+  const [counterPrice, setCounterPrice] = useState(String(batch.counterPrice || ""))
+  const [counterNote, setCounterNote] = useState(batch.counterNote || "")
+  const [deliveryNote, setDeliveryNote] = useState(batch.deliveryNote || "")
+  const status = normalizeBatchStatus(batch.status)
+  const recyclerName = batch.recyclerContactName || batch.recyclerName || "Recycler"
+  const recyclerPhone = batch.recyclerContactPhone || batch.recyclerPhone
+  const recyclerAddress = batch.recyclerDeliveryAddress || batch.recyclerAddress || "Alamat belum tersedia"
+
+  return (
+    <article className="pickup-action-card collector-batch-card">
+      <div className="collector-pickup-main">
+        <div className="data-row-copy">
+          <span className="data-eyebrow">{batch.wasteType}</span>
+          <h3>{batch.totalWeight} kg - grade {batch.grade || "B"}</h3>
+          <p>Recycler: {recyclerName}</p>
+          <p>Nomor: {recyclerPhone || "Nomor tidak tersedia"}</p>
+          <p>Alamat kirim: {recyclerAddress}</p>
+          <p>Harga awal: Rp {Number(batch.pricePerKg).toLocaleString("id-ID")}/kg</p>
+          {batch.offerPrice ? <p>Harga tawar recycler: Rp {Number(batch.offerPrice).toLocaleString("id-ID")}</p> : null}
+          {batch.counterPrice ? <p>Harga balik collector: Rp {Number(batch.counterPrice).toLocaleString("id-ID")}</p> : null}
+          {batch.agreedPrice ? <p>Harga deal: Rp {Number(batch.agreedPrice).toLocaleString("id-ID")}</p> : null}
+          {batch.platformFee ? <p>Platform fee 5%: Rp {Number(batch.platformFee).toLocaleString("id-ID")}</p> : null}
+          {batch.collectorEarning ? <p>Pendapatan collector: Rp {Number(batch.collectorEarning).toLocaleString("id-ID")}</p> : null}
+          {batch.offerNote ? <p>Catatan recycler: {batch.offerNote}</p> : null}
+          {batch.counterNote ? <p>Catatan collector: {batch.counterNote}</p> : null}
+          {batch.deliveryNote ? <p>Catatan pengiriman: {batch.deliveryNote}</p> : null}
+        </div>
+
+        <div className="row-actions collector-pickup-actions">
+          {recyclerPhone ? <a className="outline-btn" href={`tel:${recyclerPhone}`}>Hubungi Recycler</a> : <span className="status-pill warning">Nomor tidak tersedia</span>}
+          {status === "OFFER_SUBMITTED" ? (
+            <>
+              <button className="outline-btn" type="button" onClick={() => onDecision("REJECT")}>Tolak</button>
+              <button className="green-small-btn" type="button" onClick={() => onDecision("APPROVE")}>Setujui Penawaran</button>
+            </>
+          ) : status === "COUNTER_OFFERED" ? (
+            <div className="row-actions collector-counter-form">
+              <input type="number" value={counterPrice} onChange={(event) => setCounterPrice(event.target.value)} placeholder="Harga balik collector" />
+              <input type="text" value={counterNote} onChange={(event) => setCounterNote(event.target.value)} placeholder="Catatan collector" />
+              <button className="green-small-btn" type="button" onClick={() => onCounter(counterPrice, counterNote)}>Tawar Balik</button>
+            </div>
+          ) : status === "APPROVED" ? (
+            <>
+              <span className={`status-pill ${getBatchStatusLabel(batch.status) ? "success" : "success"}`}>{getBatchStatusLabel(batch.status)}</span>
+              <button className="green-small-btn" type="button" onClick={onShip}>Kirim Material</button>
+            </>
+          ) : status === "IN_DELIVERY" ? (
+            <>
+              <span className="status-pill process">Dalam Pengiriman</span>
+              <div className="row-actions collector-counter-form">
+                <input type="text" value={deliveryNote} onChange={(event) => setDeliveryNote(event.target.value)} placeholder="Catatan pengiriman" />
+                <button className="green-small-btn" type="button" onClick={() => onDeliver(deliveryNote)}>Material Sudah Diserahkan</button>
+              </div>
+            </>
+          ) : status === "DELIVERED" ? (
+            <span className="status-pill process">Menunggu konfirmasi recycler</span>
+          ) : status === "COMPLETED" ? (
+            <span className="status-pill success">Transaksi selesai</span>
+          ) : status === "REJECTED" ? (
+            <span className="status-pill danger">Pengajuan ditolak</span>
+          ) : (
+            <span className="status-pill warning">Status tidak dikenal</span>
+          )}
+        </div>
+      </div>
+
+      <BatchPurchaseTimeline
+        compact
+        status={batch.status}
+        updatedAt={batch.updatedAt || undefined}
+        agreedPrice={batch.agreedPrice || batch.offerPrice || batch.pricePerKg}
+        platformFee={batch.platformFee}
+        collectorEarning={batch.collectorEarning}
+      />
+    </article>
   )
 }
 

@@ -39,10 +39,14 @@ enum PointType {
 enum BatchStatus {
   AVAILABLE
   PURCHASE_REQUESTED
+  OFFER_SUBMITTED
+  COUNTER_OFFERED
   APPROVED
   REJECTED
+  IN_DELIVERY
   DELIVERED
   COMPLETED
+  CANCELLED
 }
 
 model User {
@@ -100,6 +104,19 @@ model MaterialBatch {
   location    String?     @db.Text
   description String?     @db.Text
   status      BatchStatus @default(AVAILABLE)
+  offerPrice  Int?
+  counterPrice Int?
+  agreedPrice Int?
+  platformFee Int?
+  collectorEarning Int?
+  recyclerContactName String?
+  recyclerContactPhone String?
+  recyclerDeliveryAddress String?
+  offerNote   String?     @db.Text
+  counterNote String?      @db.Text
+  deliveryNote String?     @db.Text
+  deliveredAt DateTime?
+  completedAt DateTime?
   createdAt   DateTime
   updatedAt   DateTime
 

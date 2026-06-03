@@ -11,7 +11,7 @@ export async function GET() {
   if (!users[0]?.isVerified) return NextResponse.json({ error: "Pengepul belum terverifikasi" }, { status: 403 })
 
   const [batches] = await pool.execute(
-    `SELECT mb.*, u.fullName AS recyclerName, u.phone AS recyclerPhone
+    `SELECT mb.*, COALESCE(mb.recyclerContactName, u.fullName) AS recyclerName, COALESCE(mb.recyclerContactPhone, u.phone) AS recyclerPhone, u.address AS recyclerAddress
      FROM material_batches mb
      LEFT JOIN users u ON mb.recyclerId = u.id
      WHERE mb.collectorId = ? AND mb.status <> "AVAILABLE"
