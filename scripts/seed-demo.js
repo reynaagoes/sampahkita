@@ -18,6 +18,8 @@ const ids = {
   batch1: "60000000-0000-4000-8000-000000000001",
   batch2: "60000000-0000-4000-8000-000000000002",
   batch3: "60000000-0000-4000-8000-000000000003",
+  batch4: "60000000-0000-4000-8000-000000000004",
+  batch5: "60000000-0000-4000-8000-000000000005",
   inventory1: "80000000-0000-4000-8000-000000000001",
   inventory2: "80000000-0000-4000-8000-000000000002",
   inventory3: "80000000-0000-4000-8000-000000000003",
@@ -97,15 +99,17 @@ async function main() {
   }
 
   const batches = [
-    [ids.batch1, ids.collector1, null, "plastik", 45, 2500, "A", "Gudang Bandung Utara", "Plastik terpilah dan siap diproses.", "AVAILABLE"],
-    [ids.batch2, ids.collector1, ids.recycler, "kertas", 30, 1500, "B", "Gudang Bandung Utara", "Kertas kardus kering.", "COMPLETED"],
-    [ids.batch3, ids.collector2, ids.recycler, "logam", 18, 5000, "A", "Gudang Bandung Selatan", "Logam campuran terpilah.", "COMPLETED"],
+    [ids.batch1, ids.collector1, null, "plastik", 45, 2500, "A", "Gudang Bandung Utara", "Plastik terpilah dan siap diproses.", "AVAILABLE", null, null, null, null, null, null, null, null],
+    [ids.batch2, ids.collector1, ids.recycler, "kertas", 30, 1500, "B", "Gudang Bandung Utara", "Kertas kardus kering.", "OFFER_SUBMITTED", 60000, null, null, null, "Penawaran awal recycler demo.", null, null, null],
+    [ids.batch3, ids.collector2, ids.recycler, "logam", 18, 5000, "A", "Gudang Bandung Selatan", "Logam campuran terpilah.", "COUNTER_OFFERED", 95000, 110000, null, null, "Penawaran awal recycler demo.", "Harga collector demo.", null, null],
+    [ids.batch4, ids.collector1, ids.recycler, "plastik", 25, 2600, "A", "Gudang Bandung Utara", "Material siap dikirim ke recycler.", "IN_DELIVERY", 65000, null, 60000, 3000, "Deal collector-recycler demo.", null, "Sedang dikirim ke recycler.", null],
+    [ids.batch5, ids.collector2, ids.recycler, "kertas", 20, 1800, "B", "Gudang Bandung Selatan", "Transaksi demo selesai.", "COMPLETED", 36000, null, 34000, 1700, "Transaksi demo selesai.", null, "Material sudah diserahkan.", new Date(), new Date()],
   ]
   for (const batch of batches) {
     await db.execute(
-      `INSERT INTO material_batches (id, collectorId, recyclerId, wasteType, totalWeight, pricePerKg, grade, location, description, status, createdAt, updatedAt)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-       ON DUPLICATE KEY UPDATE recyclerId = VALUES(recyclerId), wasteType = VALUES(wasteType), totalWeight = VALUES(totalWeight), pricePerKg = VALUES(pricePerKg), grade = VALUES(grade), location = VALUES(location), description = VALUES(description), status = VALUES(status), updatedAt = NOW()`,
+      `INSERT INTO material_batches (id, collectorId, recyclerId, wasteType, totalWeight, pricePerKg, grade, location, description, status, offerPrice, counterPrice, agreedPrice, platformFee, collectorEarning, offerNote, counterNote, deliveryNote, deliveredAt, completedAt, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+       ON DUPLICATE KEY UPDATE recyclerId = VALUES(recyclerId), wasteType = VALUES(wasteType), totalWeight = VALUES(totalWeight), pricePerKg = VALUES(pricePerKg), grade = VALUES(grade), location = VALUES(location), description = VALUES(description), status = VALUES(status), offerPrice = VALUES(offerPrice), counterPrice = VALUES(counterPrice), agreedPrice = VALUES(agreedPrice), platformFee = VALUES(platformFee), collectorEarning = VALUES(collectorEarning), offerNote = VALUES(offerNote), counterNote = VALUES(counterNote), deliveryNote = VALUES(deliveryNote), deliveredAt = VALUES(deliveredAt), completedAt = VALUES(completedAt), updatedAt = NOW()`,
       batch
     )
   }
