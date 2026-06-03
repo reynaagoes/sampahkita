@@ -89,6 +89,22 @@ async function main() {
   )
   await db.execute('UPDATE material_batches SET status = "OFFER_SUBMITTED" WHERE status = "PURCHASE_REQUESTED"')
   await db.execute(
+    `UPDATE material_batches
+     SET
+       agreedPrice = COALESCE(NULLIF(agreedPrice, 0), counterPrice, offerPrice, ROUND(pricePerKg * totalWeight)),
+       platformFee = CASE
+         WHEN COALESCE(NULLIF(agreedPrice, 0), counterPrice, offerPrice, ROUND(pricePerKg * totalWeight)) > 0
+           THEN ROUND(COALESCE(NULLIF(agreedPrice, 0), counterPrice, offerPrice, ROUND(pricePerKg * totalWeight)) * 0.05)
+         ELSE platformFee
+       END,
+       collectorEarning = CASE
+         WHEN COALESCE(NULLIF(agreedPrice, 0), counterPrice, offerPrice, ROUND(pricePerKg * totalWeight)) > 0
+           THEN COALESCE(NULLIF(agreedPrice, 0), counterPrice, offerPrice, ROUND(pricePerKg * totalWeight)) - ROUND(COALESCE(NULLIF(agreedPrice, 0), counterPrice, offerPrice, ROUND(pricePerKg * totalWeight)) * 0.05)
+         ELSE collectorEarning
+       END
+     WHERE status IN ("APPROVED","IN_DELIVERY","DELIVERED","COMPLETED")`
+  )
+  await db.execute(
     `ALTER TABLE material_batches
      MODIFY status ENUM("AVAILABLE","OFFER_SUBMITTED","COUNTER_OFFERED","APPROVED","REJECTED","IN_DELIVERY","DELIVERED","COMPLETED","CANCELLED")
      NOT NULL DEFAULT "AVAILABLE"`

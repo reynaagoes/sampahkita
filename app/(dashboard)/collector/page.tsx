@@ -6,7 +6,7 @@ import PickupTimeline from "@/components/PickupTimeline"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
-import { normalizeBatchStatus, getBatchStatusLabel } from "@/lib/batch-status"
+import { normalizeBatchStatus, getBatchStatus, getBatchStatusLabel } from "@/lib/batch-status"
 import { formatWasteTypes, getRequestStatus, getRequestStatusLabel } from "@/lib/request-status"
 
 type PickupRequest = {
@@ -29,6 +29,7 @@ type MaterialBatch = {
   totalWeight: number | string
   pricePerKg: number | string
   status: string
+  grade?: string | null
   recyclerName?: string | null
   recyclerPhone?: string | null
   recyclerAddress?: string | null
@@ -121,26 +122,47 @@ export default function CollectorDashboard() {
   const [inventory, setInventory] = useState<InventoryItem[]>([])
   const [purchaseRequests, setPurchaseRequests] = useState<MaterialBatch[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState("")
   const [notice, setNotice] = useState("")
   const [tab, setTab] = useState<"available" | "mypickups" | "inventory" | "batches" | "purchases">("available")
   const role = String(session?.user?.role || "").toUpperCase()
 
   const fetchData = useCallback(async () => {
     setLoading(true)
-    const [available, pickups, materialBatches, materialInventory, purchases] = await Promise.all([
-      fetch("/api/requests/available").then((response) => response.json()),
-      fetch("/api/requests/my-pickups").then((response) => response.json()),
-      fetch("/api/batches").then((response) => response.json()),
-      fetch("/api/inventory").then((response) => response.json()),
-      fetch("/api/batches/purchase-requests").then((response) => response.json()),
-    ])
-    setRequests(available.requests || [])
-    setMyPickups(pickups.requests || [])
-    setBatches(materialBatches.batches || [])
-    setInventory(materialInventory.inventory || [])
-    setPurchaseRequests(purchases.batches || [])
-    setNotice(available.error || pickups.error || materialBatches.error || materialInventory.error || purchases.error || "")
-    setLoading(false)
+    setLoadError("")
+
+    const safeJson = async (url: string, fallback: any) => {
+      try {
+        const response = await fetch(url)
+        const data = await response.json().catch(() => null)
+        if (!response.ok) {
+          return { ...fallback, error: data?.error || "Data gagal dimuat" }
+        }
+        return data || fallback
+      } catch {
+        return { ...fallback, error: "Data gagal dimuat" }
+      }
+    }
+
+    try {
+      const [available, pickups, materialBatches, materialInventory, purchases] = await Promise.all([
+        safeJson("/api/requests/available", { requests: [] }),
+        safeJson("/api/requests/my-pickups", { requests: [] }),
+        safeJson("/api/batches", { batches: [] }),
+        safeJson("/api/inventory", { inventory: [] }),
+        safeJson("/api/batches/purchase-requests", { batches: [] }),
+      ])
+      setRequests(available.requests || [])
+      setMyPickups(pickups.requests || [])
+      setBatches(materialBatches.batches || [])
+      setInventory(materialInventory.inventory || [])
+      setPurchaseRequests(purchases.batches || [])
+      const errors = [available.error, pickups.error, materialBatches.error, materialInventory.error, purchases.error].filter(Boolean)
+      setNotice(errors.join(" | "))
+      setLoadError(errors.length ? "Data gagal dimuat. Cek koneksi atau endpoint API." : "")
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => {
@@ -235,6 +257,13 @@ export default function CollectorDashboard() {
 
           {loading ? (
             <div className="empty-state"><p>Memuat data...</p></div>
+          ) : loadError ? (
+            <div className="empty-state">
+              <div className="empty-icon">!</div>
+              <h3>Data gagal dimuat</h3>
+              <p>Cek koneksi atau endpoint API.</p>
+              <button className="green-small-btn" type="button" onClick={() => void fetchData()}>Muat Ulang</button>
+            </div>
           ) : tab === "available" ? (
             requests.length ? requests.map((request) => (
               <article className="data-row" key={request.id}>
@@ -258,7 +287,7 @@ export default function CollectorDashboard() {
             inventory.length ? inventory.map((item) => <article className="data-row" key={item.id}><div className="data-row-copy"><span className="data-eyebrow">{item.wasteType}</span><h3>{Number(item.availableWeight).toFixed(1)} kg tersedia</h3><p>Stok bertambah setelah pickup selesai dan berkurang ketika batch dibuat.</p></div></article>) : <EmptyState title="Inventori masih kosong" text="Material dari pickup selesai akan masuk ke sini." />
           ) : tab === "batches" ? (
             batches.length ? <>{batches.map((batch) => (
-              <article className="data-row" key={batch.id}><div className="data-row-copy"><span className="data-eyebrow">{batch.wasteType}</span><h3>{batch.totalWeight} kg material</h3><p>Rp {Number(batch.pricePerKg).toLocaleString("id-ID")}/kg - status {getBatchStatusLabel(batch.status)}</p></div><span className="status-pill success">{getBatchStatusLabel(batch.status)}</span></article>
+              <article className="data-row" key={batch.id}><div className="data-row-copy"><span className="data-eyebrow">{batch.wasteType}</span><h3>{batch.totalWeight} kg material</h3><p>Rp {Number(batch.pricePerKg).toLocaleString("id-ID")}/kg - status {getBatchStatusLabel(batch.status)}</p></div><span className={`status-pill ${getBatchStatus(batch.status).tone}`}>{getBatchStatusLabel(batch.status)}</span></article>
             ))}<div className="workspace-footer"><button className="green-small-btn" type="button" onClick={() => router.push("/collector/batch/new")}>Buat Batch Material</button></div></> :
               <div className="empty-state"><div className="empty-icon">+</div><h3>Siapkan batch material</h3><p>Buat listing material setelah sampah terkumpul dan terpilah.</p><button className="green-small-btn" type="button" onClick={() => router.push("/collector/batch/new")}>Buat Batch Material</button></div>
           ) : purchaseRequests.length ? purchaseRequests.map((batch) => (
@@ -320,20 +349,23 @@ function PurchaseRequestCard({
 
         <div className="row-actions collector-pickup-actions">
           {recyclerPhone ? <a className="outline-btn" href={`tel:${recyclerPhone}`}>Hubungi Recycler</a> : <span className="status-pill warning">Nomor tidak tersedia</span>}
-          {status === "OFFER_SUBMITTED" ? (
+          {status === "OFFER_SUBMITTED" || status === "COUNTER_OFFERED" ? (
             <>
-              <button className="outline-btn" type="button" onClick={() => onDecision("REJECT")}>Tolak</button>
-              <button className="green-small-btn" type="button" onClick={() => onDecision("APPROVE")}>Setujui Penawaran</button>
+              {status === "OFFER_SUBMITTED" && (
+                <>
+                  <button className="outline-btn" type="button" onClick={() => onDecision("REJECT")}>Tolak</button>
+                  <button className="green-small-btn" type="button" onClick={() => onDecision("APPROVE")}>Setujui Penawaran</button>
+                </>
+              )}
+              <div className="row-actions collector-counter-form">
+                <input type="number" value={counterPrice} onChange={(event) => setCounterPrice(event.target.value)} placeholder="Harga balik collector" />
+                <input type="text" value={counterNote} onChange={(event) => setCounterNote(event.target.value)} placeholder="Catatan collector" />
+                <button className="green-small-btn" type="button" onClick={() => onCounter(counterPrice, counterNote)}>Tawar Balik</button>
+              </div>
             </>
-          ) : status === "COUNTER_OFFERED" ? (
-            <div className="row-actions collector-counter-form">
-              <input type="number" value={counterPrice} onChange={(event) => setCounterPrice(event.target.value)} placeholder="Harga balik collector" />
-              <input type="text" value={counterNote} onChange={(event) => setCounterNote(event.target.value)} placeholder="Catatan collector" />
-              <button className="green-small-btn" type="button" onClick={() => onCounter(counterPrice, counterNote)}>Tawar Balik</button>
-            </div>
           ) : status === "APPROVED" ? (
             <>
-              <span className={`status-pill ${getBatchStatusLabel(batch.status) ? "success" : "success"}`}>{getBatchStatusLabel(batch.status)}</span>
+              <span className={`status-pill ${getBatchStatus(batch.status).tone}`}>{getBatchStatusLabel(batch.status)}</span>
               <button className="green-small-btn" type="button" onClick={onShip}>Kirim Material</button>
             </>
           ) : status === "IN_DELIVERY" ? (

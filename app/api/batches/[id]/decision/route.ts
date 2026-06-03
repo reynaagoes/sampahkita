@@ -35,7 +35,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ message: "Pembelian ditolak", status: "REJECTED" })
   }
 
-  const finance = getBatchFinance(batch.offerPrice)
+  const finance = getBatchFinance(batch.offerPrice || Number(batch.pricePerKg || 0) * Number(batch.totalWeight || 0))
   const [result] = await pool.execute(
     `UPDATE material_batches
      SET status = "APPROVED", agreedPrice = ?, platformFee = ?, collectorEarning = ?, updatedAt = NOW()

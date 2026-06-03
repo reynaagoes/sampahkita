@@ -249,7 +249,7 @@ export default function HouseholdDashboard() {
               <button type="button" onClick={() => router.push("/household/request/new")}>Buat Penjemputan</button>
               <button type="button" onClick={() => router.push("/points")}>Poin Saya</button>
               <button type="button" onClick={() => router.push("/bid")}>Buka PasarCuan</button>
-              <button type="button">Panduan Pilah Sampah</button>
+              <button type="button" onClick={() => router.push("/guide/pilah-sampah")}>Panduan Pilah Sampah</button>
             </div>
           </aside>
         </section>

@@ -37,3 +37,27 @@ export function getBatchFinance(agreedPrice?: number | string | null) {
   const collectorEarning = Math.max(0, value - platformFee)
   return { agreedPrice: value, platformFee, collectorEarning }
 }
+
+export function resolveBatchFinance(batch: {
+  agreedPrice?: number | string | null
+  counterPrice?: number | string | null
+  offerPrice?: number | string | null
+  pricePerKg?: number | string | null
+  totalWeight?: number | string | null
+}) {
+  const agreedPrice = Math.max(
+    0,
+    Math.round(
+      Number(
+        batch.agreedPrice ||
+          batch.counterPrice ||
+          batch.offerPrice ||
+          (Number(batch.pricePerKg || 0) * Number(batch.totalWeight || 0)) ||
+          0,
+      ),
+    ),
+  )
+  const platformFee = agreedPrice > 0 ? Math.round(agreedPrice * 0.05) : 0
+  const collectorEarning = agreedPrice > 0 ? Math.max(0, agreedPrice - platformFee) : 0
+  return { agreedPrice, platformFee, collectorEarning }
+}

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import pool from "@/lib/db"
 import { getAppSession, getSessionRole } from "@/lib/auth-session"
-import { getBatchFinance } from "@/lib/batch-status"
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -10,7 +9,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     if (getSessionRole(session.user.role) !== "RECYCLER") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
-    const { offerPrice, recyclerContactName, recyclerContactPhone, recyclerDeliveryAddress, offerNote } = await req.json()
+    const { offerPrice, recyclerContactName, recyclerContactPhone, recyclerDeliveryAddress, offerNote } = await req.json().catch(() => ({}))
     const price = Math.round(Number(offerPrice || 0))
     if (!Number.isFinite(price) || price <= 0) {
       return NextResponse.json({ error: "Harga tawar harus valid" }, { status: 400 })
@@ -21,7 +20,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       [session.user.email]
     ) as any[]
     const recycler = users[0]
-    if (!recycler?.id) return NextResponse.json({ error: "User tidak ditemukan" }, { status: 404 })
+    const recyclerId = String(session.user.id || recycler?.id || "")
+    if (!recyclerId) return NextResponse.json({ error: "User tidak ditemukan" }, { status: 404 })
 
     const [rows] = await pool.execute(
       "SELECT id, status FROM material_batches WHERE id = ?",
@@ -40,22 +40,26 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       return NextResponse.json({ error: "Nama kontak, nomor kontak, dan alamat pengiriman wajib diisi" }, { status: 400 })
     }
 
-    const finance = getBatchFinance(price)
-    await pool.execute(
+    const [result] = await pool.execute(
       `UPDATE material_batches
        SET recyclerId = ?, recyclerContactName = ?, recyclerContactPhone = ?, recyclerDeliveryAddress = ?, offerPrice = ?, offerNote = ?, status = ?, agreedPrice = NULL, counterPrice = NULL, platformFee = NULL, collectorEarning = NULL, updatedAt = NOW()
        WHERE id = ? AND status = "AVAILABLE"`,
-      [recycler.id, contactName, contactPhone, deliveryAddress, price, offerNote || null, "OFFER_SUBMITTED", id]
-    )
+      [recyclerId, contactName, contactPhone, deliveryAddress, price, String(offerNote || "").trim() || null, "OFFER_SUBMITTED", id]
+    ) as any[]
+    if (!result.affectedRows) {
+      return NextResponse.json({ error: "Batch tidak tersedia untuk ditawar" }, { status: 409 })
+    }
 
     return NextResponse.json({
+      success: true,
       message: "Penawaran diajukan",
       batchId: id,
       status: "OFFER_SUBMITTED",
-      offerPrice: finance.agreedPrice,
+      offerPrice: price,
     })
   } catch (error) {
     console.error("BATCH OFFER ERROR:", error)
-    return NextResponse.json({ error: "Server error" }, { status: 500 })
+    const message = error instanceof Error ? error.message : "Server error"
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

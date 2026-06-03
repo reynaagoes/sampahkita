@@ -45,6 +45,15 @@ function IconBell() {
   )
 }
 
+function IconUser() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="profile-avatar" aria-hidden="true">
+      <path d="M12 12.2a4.1 4.1 0 1 0 0-8.2 4.1 4.1 0 0 0 0 8.2Z" stroke="currentColor" strokeWidth="2" />
+      <path d="M5.5 20c.8-3.4 3.4-5.2 6.5-5.2S17.7 16.6 18.5 20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 function IconPoints() {
   return (
     <svg viewBox="0 0 24 24" fill="none" className="nav-icon" aria-hidden="true">
@@ -69,7 +78,7 @@ export default function Navbar({ userName, role }: NavbarProps) {
 
   const dashboardPath = getDashboardPath(normalizedRole)
 
-  const firstName = userName?.trim()?.split(" ")[0] || "JOO"
+  const displayName = userName?.trim()?.split(" ")[0] || "Profil"
 
   return (
     <header className="app-navbar-shell">
@@ -94,8 +103,12 @@ export default function Navbar({ userName, role }: NavbarProps) {
         </div>
 
         <div className="app-nav-actions">
-          <Link href="/profile" className={`app-greeting ${pathname === "/profile" ? "active" : ""}`}>
-            Halo, <strong>{firstName}</strong>
+          <Link href="/profile" className={`profile-link ${pathname === "/profile" ? "active" : ""}`} aria-label="Buka profil akun">
+            <IconUser />
+            <span className="profile-copy">
+              <strong className="profile-name">{displayName}</strong>
+              {ROLE_LABEL[normalizedRole] && <small className="profile-role">{ROLE_LABEL[normalizedRole]}</small>}
+            </span>
           </Link>
           <button className="nav-square" type="button" aria-label="Notifikasi">
             <IconBell />

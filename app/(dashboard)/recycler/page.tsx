@@ -2,10 +2,10 @@
 
 import Navbar from "@/components/Navbar"
 import BatchPurchaseTimeline from "@/components/BatchPurchaseTimeline"
-import { getBatchStatus, getBatchStatusLabel, normalizeBatchStatus } from "@/lib/batch-status"
+import { getBatchStatus, getBatchStatusLabel, normalizeBatchStatus, resolveBatchFinance } from "@/lib/batch-status"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState, type FormEvent } from "react"
 
 type Batch = {
   id: string
@@ -92,18 +92,18 @@ export default function RecyclerDashboard() {
     if (status === "authenticated" && role === "RECYCLER") void Promise.resolve().then(fetchData)
   }, [status, role, fetchData])
 
-  useEffect(() => {
-    if (!selectedBatch) return
+  function openOfferForm(batch: Batch) {
+    setSelectedBatch(batch)
     setOfferForm({
-      offerPrice: String(Math.round(Number(selectedBatch.pricePerKg) * Number(selectedBatch.totalWeight) || 0)),
+      offerPrice: String(Math.round(Number(batch.pricePerKg) * Number(batch.totalWeight) || 0)),
       recyclerContactName: profile?.fullName || session?.user?.name || "",
       recyclerContactPhone: profile?.phone || "",
       recyclerDeliveryAddress: profile?.address || "",
       offerNote: "",
     })
-  }, [selectedBatch, profile, session?.user?.name])
+  }
 
-  async function submitOffer(event: React.FormEvent<HTMLFormElement>) {
+  async function submitOffer(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!selectedBatch) return
 
@@ -120,6 +120,8 @@ export default function RecyclerDashboard() {
       setSelectedBatch(null)
       setOfferForm(EMPTY_OFFER)
       await fetchData()
+      setTab("offers")
+      alert("Penawaran berhasil dikirim")
     } else {
       alert(data.error || "Penawaran tidak dapat dikirim")
     }
@@ -139,15 +141,15 @@ export default function RecyclerDashboard() {
     else alert(data.error || "Penawaran tidak dapat dibatalkan")
   }
 
-  async function confirmReceived(batchId: string) {
-    const response = await fetch(`/api/batches/${batchId}/confirm`, { method: "POST" })
+  async function updateBatch(batchId: string, endpoint: string, body?: object) {
+    const response = await fetch(`/api/batches/${batchId}/${endpoint}`, {
+      method: "POST",
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    })
     const data = await response.json().catch(() => ({}))
-    if (response.ok) {
-      alert("Penerimaan material dikonfirmasi.")
-      void fetchData()
-    } else {
-      alert(data.error || "Penerimaan tidak dapat dikonfirmasi")
-    }
+    if (response.ok) void fetchData()
+    else alert(data.error || "Status batch tidak dapat diperbarui")
   }
 
   if (status !== "authenticated" || role !== "RECYCLER") return <div className="page-loader">Memeriksa akses...</div>
@@ -157,7 +159,6 @@ export default function RecyclerDashboard() {
   const shippingBatches = myBatches.filter((batch) => ["APPROVED", "IN_DELIVERY", "DELIVERED"].includes(normalizeBatchStatus(batch.status)))
   const historyBatches = myBatches.filter((batch) => ["COMPLETED", "REJECTED", "CANCELLED"].includes(normalizeBatchStatus(batch.status)))
   const totalBought = myBatches.reduce((total, batch) => total + Number(batch.totalWeight || 0), 0)
-  const materialTypes = new Set(myBatches.map((batch) => batch.wasteType)).size
 
   return (
     <main className="app-page">
@@ -203,8 +204,8 @@ export default function RecyclerDashboard() {
                   key={batch.id}
                   batch={batch}
                   primaryActionLabel="Ajukan Penawaran"
-                  onPrimaryAction={() => setSelectedBatch(batch)}
-                  onDetailAction={() => setSelectedBatch(batch)}
+                  onPrimaryAction={() => openOfferForm(batch)}
+                  onDetailAction={() => openOfferForm(batch)}
                 />
               )) : <EmptyState title="Belum ada batch material" text="Batch akan muncul setelah pengepul terverifikasi menyelesaikan pickup dan membuat batch material." />}
             </>
@@ -245,9 +246,24 @@ export default function RecyclerDashboard() {
                     <h3>{batch.totalWeight} kg material - {batch.collectorName || "Pengepul"}</h3>
                     <p>Alamat pengiriman: {batch.recyclerDeliveryAddress || profile?.address || "Alamat belum dicantumkan"}</p>
                     <p>Nomor kontak: {batch.recyclerContactPhone || profile?.phone || "Nomor belum tersedia"}</p>
-                    <p>Harga deal: Rp {Number(batch.agreedPrice || batch.offerPrice || 0).toLocaleString("id-ID")}</p>
-                    <p>Platform fee 5%: Rp {Number(batch.platformFee || 0).toLocaleString("id-ID")}</p>
-                    <p>Pendapatan collector: Rp {Number(batch.collectorEarning || 0).toLocaleString("id-ID")}</p>
+                    {(() => {
+                      const finance = resolveBatchFinance({
+                        agreedPrice: batch.agreedPrice,
+                        counterPrice: batch.counterPrice,
+                        offerPrice: batch.offerPrice,
+                        pricePerKg: batch.pricePerKg,
+                        totalWeight: batch.totalWeight,
+                      })
+                      return finance.agreedPrice > 0 ? (
+                        <>
+                          <p>Harga deal: Rp {finance.agreedPrice.toLocaleString("id-ID")}</p>
+                          <p>Platform fee 5%: Rp {finance.platformFee.toLocaleString("id-ID")}</p>
+                          <p>Pendapatan collector: Rp {finance.collectorEarning.toLocaleString("id-ID")}</p>
+                        </>
+                      ) : (
+                        <p>Harga belum disepakati</p>
+                      )
+                    })()}
                   </div>
                   <div className="row-actions collector-pickup-actions">
                     {batch.recyclerContactPhone && <a className="outline-btn" href={`tel:${batch.recyclerContactPhone}`}>Hubungi Recycler</a>}
@@ -256,11 +272,29 @@ export default function RecyclerDashboard() {
                     ) : normalizeBatchStatus(batch.status) === "IN_DELIVERY" ? (
                       <button className="green-small-btn" type="button" onClick={() => void updateBatch(batch.id, "deliver", { deliveryNote: batch.deliveryNote || "" })}>Material Sudah Diserahkan</button>
                     ) : normalizeBatchStatus(batch.status) === "DELIVERED" ? (
-                      <span className="status-pill process">Menunggu konfirmasi recycler</span>
+                      <button className="green-small-btn" type="button" onClick={() => void updateBatch(batch.id, "confirm")}>Konfirmasi Material Diterima</button>
                     ) : null}
                   </div>
                 </div>
-                <BatchPurchaseTimeline compact status={batch.status || "APPROVED"} updatedAt={batch.updatedAt || undefined} agreedPrice={batch.agreedPrice || batch.offerPrice} platformFee={batch.platformFee} collectorEarning={batch.collectorEarning} />
+                {(() => {
+                  const finance = resolveBatchFinance({
+                    agreedPrice: batch.agreedPrice,
+                    counterPrice: batch.counterPrice,
+                    offerPrice: batch.offerPrice,
+                    pricePerKg: batch.pricePerKg,
+                    totalWeight: batch.totalWeight,
+                  })
+                  return (
+                    <BatchPurchaseTimeline
+                      compact
+                      status={batch.status || "APPROVED"}
+                      updatedAt={batch.updatedAt || undefined}
+                      agreedPrice={finance.agreedPrice}
+                      platformFee={finance.platformFee}
+                      collectorEarning={finance.collectorEarning}
+                    />
+                  )
+                })()}
               </article>
             )) : <EmptyState title="Belum ada pembelian aktif" text="Pembelian yang disetujui pengepul akan tampil di sini." />
           ) : historyBatches.length ? historyBatches.map((batch) => (
@@ -274,7 +308,25 @@ export default function RecyclerDashboard() {
                 </div>
                 <span className={`status-pill ${getBatchStatus(batch.status).tone}`}>{getBatchStatusLabel(batch.status)}</span>
               </div>
-              <BatchPurchaseTimeline compact status={batch.status || "COMPLETED"} updatedAt={batch.updatedAt || undefined} agreedPrice={batch.agreedPrice || batch.offerPrice} platformFee={batch.platformFee} collectorEarning={batch.collectorEarning} />
+              {(() => {
+                const finance = resolveBatchFinance({
+                  agreedPrice: batch.agreedPrice,
+                  counterPrice: batch.counterPrice,
+                  offerPrice: batch.offerPrice,
+                  pricePerKg: batch.pricePerKg,
+                  totalWeight: batch.totalWeight,
+                })
+                return (
+                  <BatchPurchaseTimeline
+                    compact
+                    status={batch.status || "COMPLETED"}
+                    updatedAt={batch.updatedAt || undefined}
+                    agreedPrice={finance.agreedPrice}
+                    platformFee={finance.platformFee}
+                    collectorEarning={finance.collectorEarning}
+                  />
+                )
+              })()}
             </article>
           )) : <EmptyState title="Belum ada riwayat pembelian" text="Transaksi yang selesai atau dibatalkan akan tersimpan di sini." />}
         </section>
@@ -294,7 +346,7 @@ function OfferFormCard({
   batch: Batch
   form: OfferForm
   setForm: (value: OfferForm | ((current: OfferForm) => OfferForm)) => void
-  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void
   onClose: () => void
   profile: Profile | null
 }) {
