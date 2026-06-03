@@ -1,17 +1,11 @@
-import mysql from "mysql2/promise"
+import mysql from "mysql2/promise";
 
-const pool = mysql.createPool({
-  host: "localhost",
-  port: 3306,
-  user: "root",
-  password: "root12345",
-  database: "sampahkita",
-  waitForConnections: true,
-  connectionLimit: 10,
-})
+const databaseUrl = process.env.DATABASE_URL;
 
-type AppPool = Omit<typeof pool, "execute"> & {
-  execute(sql: string, values?: unknown): Promise<[any[], unknown]>
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL is not defined");
 }
 
-export default pool as AppPool
+export const pool = mysql.createPool(databaseUrl) as any;
+
+export default pool;
