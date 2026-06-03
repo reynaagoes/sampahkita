@@ -10,7 +10,7 @@ const ROLES = [
 
 export default function RegisterPage() {
   const router = useRouter()
-  const [form, setForm] = useState({ fullName: "", email: "", password: "", phone: "", role: "HOUSEHOLD" })
+  const [form, setForm] = useState({ fullName: "", email: "", password: "", phone: "", role: "HOUSEHOLD", address: "" })
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
@@ -18,12 +18,31 @@ export default function RegisterPage() {
     e.preventDefault()
     setLoading(true)
     setError("")
-    const res = await fetch("/api/auth/register", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form),
-    })
-    const data = await res.json()
-    if (!res.ok) { setError(data.error); setLoading(false); return }
-    router.push("/login")
+    try {
+      const payload = {
+        fullName: form.fullName.trim(),
+        email: form.email.trim(),
+        password: form.password,
+        phone: form.phone.trim(),
+        role: form.role,
+        address: form.address.trim(),
+      }
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || "Terjadi kesalahan server")
+        setLoading(false)
+        return
+      }
+      router.push("/login")
+    } catch {
+      setError("Terjadi kesalahan server")
+      setLoading(false)
+    }
   }
 
   const S: Record<"label" | "input", CSSProperties> = {
@@ -75,6 +94,10 @@ export default function RegisterPage() {
             <div style={{marginBottom:"12px"}}>
               <label style={S.label}>EMAIL</label>
               <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} style={S.input} placeholder="email@example.com" required />
+            </div>
+            <div style={{marginBottom:"12px"}}>
+              <label style={S.label}>ALAMAT</label>
+              <textarea value={form.address} onChange={e => setForm({...form, address: e.target.value})} style={{...S.input,minHeight:"88px",resize:"vertical"}} placeholder="Alamat lengkap" />
             </div>
             <div style={{marginBottom:"20px"}}>
               <label style={S.label}>PASSWORD</label>
