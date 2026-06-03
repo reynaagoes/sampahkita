@@ -7,10 +7,15 @@ declare module "next-auth" {
       email: string
       name: string
       role: "HOUSEHOLD" | "COLLECTOR" | "RECYCLER" | "ADMIN"
+      isVerified: boolean
     }
   }
   interface User {
+    id: string
+    email: string
+    name: string
     role: "HOUSEHOLD" | "COLLECTOR" | "RECYCLER" | "ADMIN"
+    isVerified: boolean
   }
 }
 
@@ -18,5 +23,6 @@ declare module "next-auth/jwt" {
   interface JWT {
     role: "HOUSEHOLD" | "COLLECTOR" | "RECYCLER" | "ADMIN"
     id: string
+    isVerified: boolean
   }
 }
