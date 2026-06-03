@@ -26,26 +26,34 @@ export default function NewBidPage() {
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (photos.length < 1 || photos.length > 5) { setError("Upload 1 sampai 5 gambar"); return }
     if (!form.contactName || !form.contactPhone) { setError("Nama dan nomor kontak wajib diisi"); return }
     if (parseInt(form.maxPrice) <= parseInt(form.minPrice)) { setError("Harga maksimum harus lebih besar dari minimum"); return }
+    if (photos.length > 5) { setError("Upload maksimal 5 gambar"); return }
     setLoading(true)
     setError("")
 
-    const formData = new FormData()
-    formData.append("title", form.title)
-    formData.append("description", form.description)
-    formData.append("contactName", form.contactName)
-    formData.append("contactPhone", form.contactPhone)
-    formData.append("minPrice", form.minPrice)
-    formData.append("maxPrice", form.maxPrice)
-    formData.append("priceStep", form.priceStep)
-    photos.forEach((photo) => formData.append("images", photo))
-
-    const res = await fetch("/api/bid", { method: "POST", body: formData })
-    const data = await res.json()
-    if (!res.ok) { setError(data.error); setLoading(false); return }
-    router.push("/bid")
+    try {
+      const res = await fetch("/api/bid", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: form.title.trim(),
+          description: form.description.trim(),
+          contactName: form.contactName.trim(),
+          contactPhone: form.contactPhone.trim(),
+          minPrice: form.minPrice,
+          maxPrice: form.maxPrice,
+          priceStep: form.priceStep,
+          images: previews,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error || "Terjadi kesalahan server"); setLoading(false); return }
+      router.push("/bid")
+    } catch {
+      setError("Terjadi kesalahan server")
+      setLoading(false)
+    }
   }
 
   const S: Record<"input", CSSProperties> = { input: {width:"100%",padding:"10px 14px",borderRadius:"6px",border:"1px solid #e5e7eb",fontSize:"13px",outline:"none",boxSizing:"border-box",color:"#111"} }
