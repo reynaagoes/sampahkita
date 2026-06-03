@@ -12,6 +12,7 @@ async function main() {
       amount INT NOT NULL,
       message TEXT NULL,
       status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
+      createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       INDEX bids_listingId_idx (listingId),
       INDEX bids_bidderId_idx (bidderId),
