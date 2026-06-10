@@ -3,10 +3,12 @@ import { useSession } from "next-auth/react"
 import { useRouter, useParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import Navbar from "@/components/Navbar"
+import { getWhatsAppUrl } from "@/lib/phone"
 
 type Listing = {
   title: string
   sellerName: string
+  sellerPhone?: string | null
   description?: string | null
   photoUrl?: string | null
   contactName?: string | null
@@ -72,6 +74,12 @@ export default function BidDetailPage() {
   const nextPrice = Number(listing.currentPrice) + Number(listing.priceStep)
   const isFull = nextPrice > Number(listing.maxPrice)
   const progress = Math.round(((Number(listing.currentPrice) - Number(listing.minPrice)) / (Number(listing.maxPrice) - Number(listing.minPrice))) * 100)
+  const sellerContactName = listing.contactName || listing.sellerName
+  const sellerContactPhone = listing.contactPhone || listing.sellerPhone
+  const sellerWhatsappUrl = getWhatsAppUrl(
+    sellerContactPhone,
+    `Halo, saya tertarik dengan listing PasarCuan: ${listing.title}. Apakah masih tersedia?`
+  )
 
   return (
     <div style={{minHeight:"100vh",background:"#f9fafb"}}>
@@ -93,9 +101,26 @@ export default function BidDetailPage() {
             <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:"10px",padding:"20px",marginBottom:"14px"}}>
               <h1 style={{fontSize:"20px",fontWeight:"700",color:"#111",marginBottom:"4px",letterSpacing:"-0.3px"}}>{listing.title}</h1>
               <p style={{fontSize:"13px",color:"#9ca3af",marginBottom:"12px"}}>oleh {listing.sellerName}</p>
-              {(listing.contactName || listing.contactPhone) && <div style={{padding:"10px 12px",background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:"6px",marginBottom:"12px",fontSize:"12px",color:"#166534"}}>
-                <strong>Kontak Penjual:</strong> {listing.contactName || listing.sellerName} {listing.contactPhone && <a href={`tel:${listing.contactPhone}`} style={{marginLeft:"8px",color:"#166534",fontWeight:"700"}}>Hubungi Penjual</a>}
-              </div>}
+              <div style={{padding:"10px 12px",background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:"6px",marginBottom:"12px",fontSize:"12px",color:"#166534"}}>
+                <strong>Kontak Penjual:</strong> {sellerContactName}{" "}
+                {sellerWhatsappUrl ? (
+                  <a
+                    href={sellerWhatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{marginLeft:"8px",color:"#166534",fontWeight:"700"}}
+                  >
+                    Hubungi Penjual
+                  </a>
+                ) : (
+                  <span
+                    aria-disabled="true"
+                    style={{marginLeft:"8px",color:"#6b7280",fontWeight:"700",cursor:"not-allowed"}}
+                  >
+                    Nomor penjual belum tersedia
+                  </span>
+                )}
+              </div>
               {listing.description && <p style={{fontSize:"13px",color:"#374151",lineHeight:"1.6",marginBottom:"14px",paddingTop:"12px",borderTop:"1px solid #f3f4f6"}}>{listing.description}</p>}
 
               <div style={{padding:"12px",background:"#f9fafb",borderRadius:"6px",marginBottom:"14px",border:"1px solid #f3f4f6"}}>

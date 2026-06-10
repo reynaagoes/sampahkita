@@ -57,7 +57,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   try {
     const { id } = await params
     const [listing] = await pool.execute(
-      `SELECT bl.*, u.fullName as sellerName,
+      `SELECT bl.*, u.fullName as sellerName, u.phone as sellerPhone,
+        COALESCE(NULLIF(TRIM(bl.contactPhone), ''), u.phone) as contactPhone,
         (SELECT COUNT(*) FROM bids b WHERE b.listingId = bl.id) as bidCount
        FROM bid_listings bl JOIN users u ON bl.sellerId = u.id WHERE bl.id = ?`,
       [id]
