@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
 import { normalizeBatchStatus, getBatchStatus, getBatchStatusLabel } from "@/lib/batch-status"
 import { formatWasteTypes, getRequestStatus, getRequestStatusLabel } from "@/lib/request-status"
+import { getWhatsAppUrl } from "@/lib/phone"
 
 type PickupRequest = {
   id: string
@@ -15,6 +16,7 @@ type PickupRequest = {
   addressDetail?: string | null
   householdName?: string | null
   householdPhone?: string | null
+  pickupContactPhone?: string | null
   status: string
   actualWeight?: number | string | null
   estimatedWeight?: number | string | null
@@ -62,7 +64,11 @@ function getTypes(req: PickupRequest) {
 function PickupCard({ req, onStatus, onPickup, onComplete }: { req: PickupRequest; onStatus: (id: string, status: string) => Promise<void>; onPickup: (id: string, weight: string) => Promise<void>; onComplete: (id: string) => Promise<void> }) {
   const [weight, setWeight] = useState("")
   const statusInfo = getRequestStatus(req.status)
-  const householdPhone = req.contactPhone || req.householdPhone
+  const householdPhone = req.pickupContactPhone || req.contactPhone || req.householdPhone
+  const householdWhatsAppUrl = getWhatsAppUrl(
+    householdPhone,
+    `Halo, saya pengepul dari CuanSampah. Saya ingin konfirmasi penjemputan sampah di ${req.addressDetail || "alamat request ini"}.`
+  )
 
   return (
     <article className="pickup-action-card collector-pickup-card">
@@ -77,7 +83,11 @@ function PickupCard({ req, onStatus, onPickup, onComplete }: { req: PickupReques
         </div>
 
         <div className="row-actions collector-pickup-actions">
-          {householdPhone ? <a className="outline-btn" href={`tel:${householdPhone}`}>Hubungi Household</a> : <span className="status-pill warning">Nomor tidak tersedia</span>}
+          {householdWhatsAppUrl ? (
+            <a className="outline-btn" href={householdWhatsAppUrl} target="_blank" rel="noopener noreferrer">Hubungi Household</a>
+          ) : (
+            <span className="status-pill warning">Nomor tidak tersedia</span>
+          )}
           {req.status === "ASSIGNED" ? (
             <button className="green-small-btn" type="button" onClick={() => void onStatus(req.id, "ON_THE_WAY")}>Saya Berangkat</button>
           ) : req.status === "ON_THE_WAY" ? (
@@ -266,19 +276,7 @@ export default function CollectorDashboard() {
             </div>
           ) : tab === "available" ? (
             requests.length ? requests.map((request) => (
-              <article className="data-row" key={request.id}>
-                <div className="data-row-copy">
-                  <span className="data-eyebrow">{getTypes(request)}</span>
-                  <h3>{request.addressDetail || "Alamat penjemputan"}</h3>
-                  <p>Dari {request.householdName || "Rumah tangga"} {request.estimatedWeight ? `- estimasi ${request.estimatedWeight} kg` : ""}</p>
-                  {(request.contactPhone || request.householdPhone) && <p><a href={`tel:${request.contactPhone || request.householdPhone}`}>Hubungi Household</a></p>}
-                  <p>{request.createdAt ? `Dibuat ${new Date(request.createdAt).toLocaleDateString("id-ID")}` : "Jadwal pickup mengikuti konfirmasi pengepul."}</p>
-                </div>
-                <div className="row-actions">
-                  <button className="outline-btn" type="button" disabled title="Halaman detail request belum tersedia">Lihat Detail - Segera Hadir</button>
-                  <button className="green-small-btn" type="button" onClick={() => void acceptRequest(request.id)}>Ambil Request</button>
-                </div>
-              </article>
+              <AvailableRequestCard key={request.id} request={request} onAccept={acceptRequest} />
             )) : <EmptyState title="Tidak ada request tersedia" text="Request baru dari rumah tangga akan muncul di sini." />
           ) : tab === "mypickups" ? (
             myPickups.length ? myPickups.map((request) => <PickupCard key={request.id} req={request} onStatus={updatePickupStatus} onPickup={pickupRequest} onComplete={completeRequest} />) :
@@ -303,6 +301,34 @@ export default function CollectorDashboard() {
         </section>
       </section>
     </main>
+  )
+}
+
+function AvailableRequestCard({ request, onAccept }: { request: PickupRequest; onAccept: (id: string) => Promise<void> }) {
+  const householdPhone = request.pickupContactPhone || request.contactPhone || request.householdPhone
+  const householdWhatsAppUrl = getWhatsAppUrl(
+    householdPhone,
+    `Halo, saya pengepul dari CuanSampah. Saya ingin konfirmasi penjemputan sampah di ${request.addressDetail || "alamat request ini"}.`
+  )
+
+  return (
+    <article className="data-row">
+      <div className="data-row-copy">
+        <span className="data-eyebrow">{getTypes(request)}</span>
+        <h3>{request.addressDetail || "Alamat penjemputan"}</h3>
+        <p>Dari {request.householdName || "Rumah tangga"} {request.estimatedWeight ? `- estimasi ${request.estimatedWeight} kg` : ""}</p>
+        {householdWhatsAppUrl ? (
+          <p><a href={householdWhatsAppUrl} target="_blank" rel="noopener noreferrer">Hubungi Household</a></p>
+        ) : (
+          <p>Nomor tidak tersedia</p>
+        )}
+        <p>{request.createdAt ? `Dibuat ${new Date(request.createdAt).toLocaleDateString("id-ID")}` : "Jadwal pickup mengikuti konfirmasi pengepul."}</p>
+      </div>
+      <div className="row-actions">
+        <button className="outline-btn" type="button" disabled title="Halaman detail request belum tersedia">Lihat Detail - Segera Hadir</button>
+        <button className="green-small-btn" type="button" onClick={() => void onAccept(request.id)}>Ambil Request</button>
+      </div>
+    </article>
   )
 }
 

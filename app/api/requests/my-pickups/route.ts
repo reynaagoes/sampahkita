@@ -19,7 +19,8 @@ export async function GET() {
     if (!users[0]?.isVerified) return NextResponse.json({ error: "Pengepul belum terverifikasi" }, { status: 403 })
 
     const [requests] = await pool.execute(
-      `SELECT sr.*, u.fullName as householdName, u.phone as householdPhone
+      `SELECT sr.*, u.fullName as householdName, u.phone as householdPhone,
+        COALESCE(NULLIF(TRIM(sr.contactPhone), ''), u.phone) as pickupContactPhone
        FROM sampah_requests sr
        JOIN users u ON sr.householdId = u.id
        WHERE sr.collectorId = ?
