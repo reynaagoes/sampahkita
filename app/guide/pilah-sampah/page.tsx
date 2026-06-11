@@ -50,7 +50,7 @@ export default function PilahSampahGuidePage() {
       <section className="dashboard-container">
         <section className="classic-panel" style={{ padding: "18px" }}>
           <div className="empty-state" style={{ marginBottom: "16px" }}>
-            <h3>Sampah yang terpilah rapi lebih cepat divalidasi pengepul dan membantu proses daur ulang.</h3>
+            <h3>Sampah yang dipilah dengan rapi lebih cepat divalidasi pengepul dan lebih mudah diproses untuk daur ulang.</h3>
           </div>
 
           <div className="guide-grid">
@@ -64,8 +64,8 @@ export default function PilahSampahGuidePage() {
           </div>
 
           <div className="workspace-footer" style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "center" }}>
-            <p style={{ margin: 0, color: "var(--muted)", fontSize: "13px" }}>Gunakan panduan ini sebelum membuat request angkut gratis.</p>
-            <Link className="green-small-btn" href="/household/request/new">Buat Request</Link>
+            <p style={{ margin: 0, color: "var(--muted)", fontSize: "13px" }}>Gunakan panduan ini sebelum membuat permintaan penjemputan gratis.</p>
+            <Link className="green-small-btn" href="/household/request/new">Buat Permintaan</Link>
           </div>
         </section>
       </section>

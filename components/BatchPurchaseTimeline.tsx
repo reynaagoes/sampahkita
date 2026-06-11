@@ -16,19 +16,19 @@ const STEPS = [
   },
   {
     label: "Penawaran disetujui / harga disepakati",
-    description: "Collector menerima, menolak, atau memberi harga balik sampai deal tercapai.",
+    description: "Pengepul menerima, menolak, atau memberi penawaran balik sampai tercapai kesepakatan.",
   },
   {
-    label: "Collector mengirim material",
-    description: "Collector menyiapkan dan mengirim material ke alamat recycler.",
+    label: "Pengepul mengirim material",
+    description: "Pengepul menyiapkan dan mengirim material ke alamat recycler.",
   },
   {
     label: "Material diserahkan",
-    description: "Collector sudah menandai material diserahkan di tujuan.",
+    description: "Pengepul sudah menandai material telah diserahkan di tujuan.",
   },
   {
     label: "Recycler mengonfirmasi diterima",
-    description: "Recycler memastikan material yang diterima sesuai.",
+    description: "Recycler memastikan material yang diterima sudah sesuai.",
   },
   {
     label: "Transaksi selesai",
@@ -76,7 +76,7 @@ export default function BatchPurchaseTimeline({
 
         return (
           <div className={className} key={step.label}>
-            <span className="batch-timeline-marker" aria-hidden="true">{isCompleted ? "✓" : ""}</span>
+            <span className="batch-timeline-marker" aria-hidden="true">{isCompleted ? "OK" : ""}</span>
             <div>
               <strong>{step.label}</strong>
               {!compact && <p>{step.description}</p>}
@@ -88,8 +88,8 @@ export default function BatchPurchaseTimeline({
         <div className="batch-timeline-summary">
           <span>Status: {getBatchStatusLabel(status)}</span>
           <span>Harga deal: {formatMoney(agreedPrice)}</span>
-          <span>Platform fee 5%: {formatMoney(platformFee)}</span>
-          <span>Pendapatan collector: {formatMoney(collectorEarning)}</span>
+          <span>Biaya platform 5%: {formatMoney(platformFee)}</span>
+          <span>Pendapatan pengepul: {formatMoney(collectorEarning)}</span>
         </div>
       )}
       {updatedAt && <p className="batch-timeline-updated">Terakhir diperbarui: {new Date(updatedAt).toLocaleString("id-ID")}</p>}

@@ -14,11 +14,11 @@ export default function ResetPassword() {
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault()
     if (password.length < 8) {
-      setError('Password minimal 8 karakter')
+      setError('Kata sandi minimal 8 karakter')
       return
     }
     if (password !== konfirm) {
-      setError('Password tidak cocok')
+      setError('Konfirmasi kata sandi tidak cocok')
       return
     }
 
@@ -34,7 +34,7 @@ export default function ResetPassword() {
       return
     }
 
-    alert('Password berhasil diubah! Silakan login.')
+    alert('Kata sandi berhasil diubah. Silakan masuk kembali.')
     router.push('/login')
   }
 
@@ -43,7 +43,7 @@ export default function ResetPassword() {
       <div className='bg-white rounded-2xl shadow p-8 w-full max-w-md'>
         <div className='text-center mb-8'>
           <div className='text-3xl font-bold text-green-600 mb-3'>CS</div>
-          <h1 className='text-2xl font-bold'>Buat Password Baru</h1>
+          <h1 className='text-2xl font-bold'>Buat Kata Sandi Baru</h1>
         </div>
 
         {error && (
@@ -54,7 +54,7 @@ export default function ResetPassword() {
 
         <form onSubmit={handleReset} className='space-y-4'>
           <div>
-            <label className='block text-sm font-medium text-gray-700 mb-1'>Password Baru</label>
+            <label className='block text-sm font-medium text-gray-700 mb-1'>Kata Sandi Baru</label>
             <input
               type='password'
               required
@@ -66,13 +66,13 @@ export default function ResetPassword() {
           </div>
 
           <div>
-            <label className='block text-sm font-medium text-gray-700 mb-1'>Konfirmasi Password</label>
+            <label className='block text-sm font-medium text-gray-700 mb-1'>Konfirmasi Kata Sandi</label>
             <input
               type='password'
               required
               value={konfirm}
               onChange={(e) => setKonfirm(e.target.value)}
-              placeholder='Ulangi password baru'
+              placeholder='Ulangi kata sandi baru'
               className='w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-500'
             />
           </div>
@@ -82,7 +82,7 @@ export default function ResetPassword() {
             disabled={loading}
             className='w-full bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition'
           >
-            {loading ? 'Menyimpan...' : 'Simpan Password Baru'}
+            {loading ? 'Menyimpan...' : 'Simpan Kata Sandi Baru'}
           </button>
         </form>
       </div>

@@ -47,14 +47,14 @@ export default function ForgotPassword() {
           <>
             <div className="auth-success-mark">OK</div>
             <h1>Email terkirim</h1>
-            <p>{mock ? <>Mode demo aktif. Permintaan reset untuk <strong>{email}</strong> sudah dicatat, tetapi email belum dikirim karena layanan email belum dikonfigurasi.</> : <>Cek email <strong>{email}</strong> dan buka link untuk membuat password baru.</>}</p>
-            <Link href="/login" className="secondary-link-btn">Kembali ke Login</Link>
+            <p>{mock ? <>Mode demo aktif. Permintaan reset untuk <strong>{email}</strong> sudah dicatat, tetapi email belum dikirim karena layanan email belum dikonfigurasi.</> : <>Cek email <strong>{email}</strong> dan buka tautan untuk membuat kata sandi baru.</>}</p>
+            <Link href="/login" className="secondary-link-btn">Kembali ke Halaman Masuk</Link>
           </>
         ) : (
           <>
             <span className="section-kicker">Keamanan akun</span>
-            <h1>Lupa password?</h1>
-            <p>Masukkan email akunmu. Kami akan mengirimkan link untuk mengatur ulang password.</p>
+            <h1>Lupa kata sandi?</h1>
+            <p>Masukkan email akunmu. Kami akan mengirimkan tautan untuk mengatur ulang kata sandi.</p>
 
             {error && <div className="form-error">{error}</div>}
 
@@ -70,11 +70,11 @@ export default function ForgotPassword() {
                 />
               </label>
               <button type="submit" className="primary-btn" disabled={loading}>
-                {loading ? "Mengirim..." : "Kirim Link Reset"}
+                {loading ? "Mengirim..." : "Kirim Tautan Reset"}
               </button>
             </form>
 
-            <Link href="/login" className="secondary-link-btn">Kembali ke Login</Link>
+            <Link href="/login" className="secondary-link-btn">Kembali ke Halaman Masuk</Link>
           </>
         )}
       </section>

@@ -7,7 +7,7 @@ import { useEffect, useState } from "react"
 import { REWARDS, WASTE_MATERIALS } from "@/lib/points"
 
 const EARNING_STEPS = [
-  ["01", "Request selesai", "Poin masuk setelah proses penjemputan dinyatakan selesai."],
+  ["01", "Permintaan selesai", "Poin masuk setelah proses penjemputan dinyatakan selesai."],
   ["02", "Berat sampah tervalidasi", "Jumlah poin menyesuaikan berat aktual yang dicatat pengepul."],
   ["03", "Sampah terpilah rapi", "Pisahkan material agar proses validasi lebih cepat dan bernilai."],
   ["04", "Transaksi PasarCuan", "Barang layak pakai dapat memberi nilai tambahan melalui PasarCuan."],
@@ -75,17 +75,17 @@ export default function PointsPage() {
           <div>
             <span className="section-kicker">Poin Saya</span>
             <h1>{points.toLocaleString("id-ID")} <small>poin</small></h1>
-            <p>Kumpulkan poin dari sampah yang tervalidasi dan tukarkan dengan reward.</p>
+            <p>Kumpulkan poin dari sampah yang tervalidasi lalu tukarkan dengan reward.</p>
           </div>
           <button className="light-btn" type="button" onClick={() => router.push(dashboardPath)}>
-            {role === "HOUSEHOLD" ? "Buat Request Angkut" : "Kembali ke Dashboard"}
+            {role === "HOUSEHOLD" ? "Buat Permintaan Angkut" : "Kembali ke Dashboard"}
           </button>
         </div>
 
         <section className="content-section">
           <div className="section-heading">
-            <h2>Poin Dipakai untuk Apa?</h2>
-            <p>Poin menjadi indikator dampak dan akan mendukung penukaran voucher, reward, serta badge kontribusi.</p>
+            <h2>Poin Digunakan untuk Apa?</h2>
+            <p>Poin menjadi indikator dampak dan dapat digunakan untuk penukaran voucher, reward, serta badge kontribusi.</p>
           </div>
           <div className="points-purpose">
             <span>Reward</span><span>Voucher</span><span>Badge kontribusi</span><span>Indikator dampak</span>
@@ -146,7 +146,7 @@ export default function PointsPage() {
             <h2>Riwayat Penukaran</h2>
             <p>Voucher yang ditukar akan tampil sebagai reward saya.</p>
           </div>
-          {redemptions.length ? <div className="request-list">{redemptions.map((item) => <article className="data-row" key={item.id}><div className="data-row-copy"><h3>{item.rewardName}</h3><p>{item.pointsCost} poin - {item.status} - {new Date(item.createdAt).toLocaleDateString("id-ID")}</p></div></article>)}</div> : <div className="empty-state"><div className="empty-icon">+</div><h3>Belum ada reward</h3><p>Reward yang kamu tukar akan muncul di sini.</p></div>}
+          {redemptions.length ? <div className="request-list">{redemptions.map((item) => <article className="data-row" key={item.id}><div className="data-row-copy"><h3>{item.rewardName}</h3><p>{item.pointsCost} poin - {item.status} - {new Date(item.createdAt).toLocaleDateString("id-ID")}</p></div></article>)}</div> : <div className="empty-state"><div className="empty-icon">+</div><h3>Belum ada reward</h3><p>Reward yang kamu tukarkan akan muncul di sini.</p></div>}
         </section>
 
         <section className="content-card points-history">
@@ -157,7 +157,7 @@ export default function PointsPage() {
           {history.length ? <div className="request-list">{history.map((item) => <article className="data-row" key={item.id}><div className="data-row-copy"><h3>+{item.amount} poin</h3><p>{item.description || "Pickup selesai"} - {new Date(item.createdAt).toLocaleDateString("id-ID")}</p></div></article>)}</div> : <div className="empty-state">
             <div className="empty-icon">+</div>
             <h3>Belum ada riwayat poin.</h3>
-            <p>Riwayat poin akan muncul setelah request selesai.</p>
+            <p>Riwayat poin akan muncul setelah permintaan selesai.</p>
           </div>}
         </section>
       </section>

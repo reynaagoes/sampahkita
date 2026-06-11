@@ -65,7 +65,7 @@ export default function NewBidPage() {
         <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"24px"}}>
           <button onClick={() => router.back()} style={{background:"none",border:"none",fontSize:"13px",color:"#9ca3af",cursor:"pointer",padding:0}}>Kembali</button>
           <div style={{width:"1px",height:"14px",background:"#e5e7eb"}}></div>
-          <h1 style={{fontSize:"18px",fontWeight:"700",color:"#111",letterSpacing:"-0.3px"}}>Jual Barang via Bid</h1>
+          <h1 style={{fontSize:"18px",fontWeight:"700",color:"#111",letterSpacing:"-0.3px"}}>Jual Barang dengan Bid</h1>
         </div>
 
         {error && <div style={{fontSize:"13px",padding:"10px 14px",borderRadius:"6px",background:"#fef2f2",color:"#dc2626",marginBottom:"16px",border:"1px solid #fecaca"}}>{error}</div>}
@@ -81,7 +81,7 @@ export default function NewBidPage() {
               ) : (
                 <div style={{width:"100%",height:"220px",border:"2px dashed #e5e7eb",borderRadius:"6px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#f9fafb"}}>
                   <div style={{fontSize:"18px",fontWeight:"700",color:"#16a34a",marginBottom:"8px"}}>IMG</div>
-                  <p style={{fontSize:"13px",fontWeight:"600",color:"#374151",marginBottom:"2px"}}>Klik untuk upload foto</p>
+                  <p style={{fontSize:"13px",fontWeight:"600",color:"#374151",marginBottom:"2px"}}>Klik untuk mengunggah foto</p>
                   <p style={{fontSize:"11px",color:"#9ca3af"}}>JPG, PNG, WEBP - 1 sampai 5 gambar</p>
                 </div>
               )}
@@ -99,12 +99,12 @@ export default function NewBidPage() {
             <div style={{fontSize:"10px",fontWeight:"700",color:"#374151",letterSpacing:"1px",marginBottom:"16px"}}>DETAIL BARANG</div>
             <div style={{marginBottom:"12px"}}>
               <label style={{display:"block",fontSize:"11px",fontWeight:"700",color:"#374151",marginBottom:"5px",letterSpacing:"0.3px"}}>NAMA BARANG</label>
-              <input type="text" value={form.title} onChange={e => setForm({...form,title:e.target.value})} style={S.input} placeholder="Contoh: Raket Tennis Wilson Pro" required />
+              <input type="text" value={form.title} onChange={e => setForm({...form,title:e.target.value})} style={S.input} placeholder="Contoh: Raket tenis Wilson Pro" required />
             </div>
             <div>
               <label style={{display:"block",fontSize:"11px",fontWeight:"700",color:"#374151",marginBottom:"5px",letterSpacing:"0.3px"}}>DESKRIPSI</label>
               <textarea value={form.description} onChange={e => setForm({...form,description:e.target.value})}
-                style={{...S.input,resize:"vertical"}} placeholder="Kondisi barang, alasan jual, dll" rows={3} />
+                style={{...S.input,resize:"vertical"}} placeholder="Kondisi barang, alasan dijual, dan informasi lain" rows={3} />
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginTop:"12px"}}>
               <div>
@@ -136,14 +136,14 @@ export default function NewBidPage() {
             </div>
             {form.minPrice && form.maxPrice && form.priceStep && (
               <div style={{marginTop:"12px",padding:"12px",background:"#f9fafb",borderRadius:"6px",fontSize:"12px",color:"#374151",border:"1px solid #f3f4f6"}}>
-                Bid dimulai dari <strong>Rp {parseInt(form.minPrice).toLocaleString("id-ID")}</strong>, naik <strong>Rp {parseInt(form.priceStep).toLocaleString("id-ID")}</strong> tiap bid, max <strong>Rp {parseInt(form.maxPrice).toLocaleString("id-ID")}</strong>. Berlaku selama <strong>24 jam</strong>.
+                Bid dimulai dari <strong>Rp {parseInt(form.minPrice).toLocaleString("id-ID")}</strong>, naik <strong>Rp {parseInt(form.priceStep).toLocaleString("id-ID")}</strong> setiap bid, maksimal <strong>Rp {parseInt(form.maxPrice).toLocaleString("id-ID")}</strong>. Listing aktif selama <strong>24 jam</strong>.
               </div>
             )}
           </div>
 
           <button type="submit" disabled={loading}
             style={{width:"100%",padding:"12px",borderRadius:"6px",border:"none",background:loading?"#9ca3af":"#111",color:"#fff",fontSize:"13px",fontWeight:"600",cursor:loading?"not-allowed":"pointer"}}>
-            {loading ? "Membuat listing..." : "Publish Listing Bid"}
+            {loading ? "Membuat listing..." : "Publikasikan Listing"}
           </button>
         </form>
       </div>

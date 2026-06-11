@@ -47,7 +47,7 @@ export default function NewRequestPage() {
           <button onClick={() => router.back()} style={{background:"none",border:"none",fontSize:"13px",color:"#9ca3af",cursor:"pointer",padding:0}}>Kembali</button>
           <div style={{width:"1px",height:"14px",background:"#e5e7eb"}}></div>
           <div>
-            <h1 style={{fontSize:"18px",fontWeight:"700",color:"#111",letterSpacing:"-0.3px"}}>Buat Request Sampah</h1>
+            <h1 style={{fontSize:"18px",fontWeight:"700",color:"#111",letterSpacing:"-0.3px"}}>Buat Permintaan Penjemputan</h1>
           </div>
         </div>
 
@@ -104,7 +104,7 @@ export default function NewRequestPage() {
 
         <button onClick={handleSubmit} disabled={loading}
           style={{width:"100%",padding:"12px",borderRadius:"6px",border:"none",background:loading?"#9ca3af":"#111",color:"#fff",fontSize:"13px",fontWeight:"600",cursor:loading?"not-allowed":"pointer"}}>
-          {loading ? "Mengirim..." : "Kirim Request"}
+          {loading ? "Mengirim..." : "Kirim Permintaan"}
         </button>
       </div>
     </div>

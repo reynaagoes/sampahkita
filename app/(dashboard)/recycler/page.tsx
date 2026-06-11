@@ -131,7 +131,7 @@ export default function RecyclerDashboard() {
     const response = await fetch(`/api/batches/${batchId}/accept-counter`, { method: "POST" })
     const data = await response.json().catch(() => ({}))
     if (response.ok) void fetchData()
-    else alert(data.error || "Harga collector tidak dapat diterima")
+    else alert(data.error || "Harga pengepul tidak dapat diterima")
   }
 
   async function cancelOffer(batchId: string) {
@@ -167,7 +167,7 @@ export default function RecyclerDashboard() {
         <div className="role-hero-content">
           <span className="section-kicker">Dashboard Recycler</span>
           <h1>Selamat datang, {session.user.name?.split(" ")[0]}. Beli batch material daur ulang dari pengepul terverifikasi.</h1>
-          <p>Recycler mengajukan penawaran, menunggu counter offer, lalu menerima material setelah collector mengirim ke alamat tujuan.</p>
+          <p>Recycler mengajukan penawaran, menunggu penawaran balik bila ada, lalu menerima material setelah pengepul mengirim ke alamat tujuan.</p>
           <button className="light-btn" type="button" onClick={() => setTab("available")}>Cari Batch Material</button>
         </div>
       </section>
@@ -182,7 +182,7 @@ export default function RecyclerDashboard() {
 
         <div className="role-info-card">
           <strong>Recycler besar aktif di kota</strong>
-          <span>PasarCuan tetap fitur tambahan. Flow inti di sini adalah penawaran batch material dari collector ke recycler.</span>
+          <span>PasarCuan tetap fitur tambahan. Alur utama di sini adalah penawaran batch material dari pengepul ke recycler.</span>
           <button className="outline-btn" type="button" onClick={() => router.push("/bid")}>Buka PasarCuan</button>
         </div>
 
@@ -218,15 +218,15 @@ export default function RecyclerDashboard() {
                     <h3>{batch.totalWeight} kg material - grade {batch.grade || "B"}</h3>
                     <p>Dari {batch.collectorName || "Pengepul terverifikasi"} {batch.location ? `- ${batch.location}` : ""}</p>
                     <p>Harga tawar saya: Rp {Number(batch.offerPrice || 0).toLocaleString("id-ID")}</p>
-                    {normalizeBatchStatus(batch.status) === "COUNTER_OFFERED" && <p>Harga balik collector: Rp {Number(batch.counterPrice || 0).toLocaleString("id-ID")}</p>}
+                    {normalizeBatchStatus(batch.status) === "COUNTER_OFFERED" && <p>Harga penawaran balik pengepul: Rp {Number(batch.counterPrice || 0).toLocaleString("id-ID")}</p>}
                     {batch.offerNote && <p>Catatan saya: {batch.offerNote}</p>}
-                    {batch.counterNote && <p>Catatan collector: {batch.counterNote}</p>}
+                    {batch.counterNote && <p>Catatan pengepul: {batch.counterNote}</p>}
                   </div>
                   <div className="row-actions collector-pickup-actions">
                     {normalizeBatchStatus(batch.status) === "COUNTER_OFFERED" ? (
                       <>
                         <button className="outline-btn" type="button" onClick={() => void cancelOffer(batch.id)}>Batalkan</button>
-                        <button className="green-small-btn" type="button" onClick={() => void acceptCounter(batch.id)}>Terima Harga Collector</button>
+                        <button className="green-small-btn" type="button" onClick={() => void acceptCounter(batch.id)}>Terima Harga Pengepul</button>
                       </>
                     ) : (
                       <span className={`status-pill ${getBatchStatus(batch.status).tone}`}>{getBatchStatusLabel(batch.status)}</span>
@@ -257,8 +257,8 @@ export default function RecyclerDashboard() {
                       return finance.agreedPrice > 0 ? (
                         <>
                           <p>Harga deal: Rp {finance.agreedPrice.toLocaleString("id-ID")}</p>
-                          <p>Platform fee 5%: Rp {finance.platformFee.toLocaleString("id-ID")}</p>
-                          <p>Pendapatan collector: Rp {finance.collectorEarning.toLocaleString("id-ID")}</p>
+                          <p>Biaya platform 5%: Rp {finance.platformFee.toLocaleString("id-ID")}</p>
+                          <p>Pendapatan pengepul: Rp {finance.collectorEarning.toLocaleString("id-ID")}</p>
                         </>
                       ) : (
                         <p>Harga belum disepakati</p>
@@ -367,7 +367,7 @@ function OfferFormCard({
 
       <form className="offer-form-grid" onSubmit={onSubmit}>
         <label>
-          Harga tawar recycler
+          Harga penawaran recycler
           <input type="number" min="1" value={form.offerPrice} onChange={(event) => setForm((current) => ({ ...current, offerPrice: event.target.value }))} />
         </label>
         <label>
@@ -411,7 +411,7 @@ function BatchListItem({
         <span className="data-eyebrow">{batch.wasteType}</span>
         <h3>{batch.totalWeight} kg material - grade {batch.grade || "B"}</h3>
         <p>Dari {batch.collectorName || "Pengepul terverifikasi"} {batch.location ? `- ${batch.location}` : ""}</p>
-        <p>Harga referensi collector: Rp {Number(batch.pricePerKg).toLocaleString("id-ID")}/kg</p>
+        <p>Harga referensi pengepul: Rp {Number(batch.pricePerKg).toLocaleString("id-ID")}/kg</p>
         {batch.description && <p>{batch.description}</p>}
       </div>
       <div className="row-actions">

@@ -50,7 +50,7 @@ export default function NewBatchPage() {
         <div style={{display:"flex",alignItems:"center",gap:"12px",marginBottom:"24px"}}>
           <button onClick={() => router.back()} style={{background:"none",border:"none",fontSize:"13px",color:"#9ca3af",cursor:"pointer",padding:0}}>Kembali</button>
           <div style={{width:"1px",height:"14px",background:"#e5e7eb"}}></div>
-          <h1 style={{fontSize:"18px",fontWeight:"700",color:"#111",letterSpacing:"-0.3px"}}>Listing Batch Material</h1>
+          <h1 style={{fontSize:"18px",fontWeight:"700",color:"#111",letterSpacing:"-0.3px"}}>Buat Batch Material</h1>
         </div>
 
         {error && <div style={{fontSize:"13px",padding:"10px 14px",borderRadius:"6px",background:"#fef2f2",color:"#dc2626",marginBottom:"16px",border:"1px solid #fecaca"}}>{error}</div>}
@@ -103,7 +103,7 @@ export default function NewBatchPage() {
           {form.totalWeight && (
             <div style={{background:"#fff",border:"1px solid #e5e7eb",borderRadius:"8px",padding:"16px 20px",marginBottom:"14px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div>
-                <div style={{fontSize:"10px",fontWeight:"700",color:"#374151",letterSpacing:"1px",marginBottom:"4px"}}>TOTAL NILAI BATCH</div>
+                <div style={{fontSize:"10px",fontWeight:"700",color:"#374151",letterSpacing:"1px",marginBottom:"4px"}}>ESTIMASI NILAI BATCH</div>
                 <div style={{fontSize:"22px",fontWeight:"700",color:"#111"}}>Rp {totalValue.toLocaleString("id-ID")}</div>
               </div>
               <div style={{fontSize:"11px",color:"#9ca3af",textAlign:"right"}}>
@@ -115,7 +115,7 @@ export default function NewBatchPage() {
 
           <button type="submit" disabled={loading}
             style={{width:"100%",padding:"12px",borderRadius:"6px",border:"none",background:loading?"#9ca3af":"#111",color:"#fff",fontSize:"13px",fontWeight:"600",cursor:loading?"not-allowed":"pointer"}}>
-            {loading ? "Membuat listing..." : "Publish ke Marketplace Recycler"}
+            {loading ? "Membuat batch..." : "Publikasikan ke Marketplace Recycler"}
           </button>
         </form>
       </div>

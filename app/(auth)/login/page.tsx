@@ -21,7 +21,7 @@ export default function LoginPage() {
     const res = await signIn("credentials", { email, password, redirect: false })
 
     if (res?.error) {
-      setError("Email atau password salah")
+      setError("Email atau kata sandi salah")
       setLoading(false)
       return
     }
@@ -58,8 +58,8 @@ export default function LoginPage() {
             <span>rumah tetap nyaman.</span>
           </h1>
           <p>
-            Jadwalkan penjemputan sampah gratis dari rumah. Kami membantu prosesnya
-            tetap mudah, teratur, dan memberi dampak baik untuk lingkungan.
+            Jadwalkan penjemputan sampah gratis dari rumah dengan proses yang mudah,
+            teratur, dan berdampak baik bagi lingkungan.
           </p>
 
           <div className="login-feature-list">
@@ -67,7 +67,7 @@ export default function LoginPage() {
               <span className="feature-dot" />
               <div>
                 <strong>Angkut sampah gratis</strong>
-                <small>Pilih jadwal, kami datang ke rumahmu.</small>
+                <small>Pilih jadwal, lalu kami jemput langsung dari rumah.</small>
               </div>
             </div>
             <div className="login-feature-card">
@@ -101,12 +101,12 @@ export default function LoginPage() {
           </label>
 
           <label className="form-field">
-            <span>Password</span>
+            <span>Kata sandi</span>
             <input
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="Masukkan password"
+              placeholder="Masukkan kata sandi"
               required
             />
           </label>
@@ -116,7 +116,7 @@ export default function LoginPage() {
           </button>
 
           <div className="login-mini-links">
-            <Link href="/forgot-password">Lupa password?</Link>
+            <Link href="/forgot-password">Lupa kata sandi?</Link>
             <Link href="/register">Buat akun</Link>
           </div>
         </form>
@@ -124,14 +124,14 @@ export default function LoginPage() {
 
       <section id="layanan" className="login-info-section">
         <span className="section-kicker">Layanan</span>
-        <h2>Request angkut sampah gratis dari rumah.</h2>
-        <p>Rumah tangga membuat request, pengepul mengambil pickup, berat aktual divalidasi, lalu poin masuk otomatis.</p>
+        <h2>Ajukan penjemputan sampah gratis dari rumah.</h2>
+        <p>Rumah tangga membuat permintaan, pengepul menjemput sampah, berat aktual divalidasi, lalu poin masuk otomatis.</p>
       </section>
 
       <section id="cara-kerja" className="login-info-section">
         <span className="section-kicker">Cara Kerja</span>
-        <h2>Alur sederhana tanpa chat realtime.</h2>
-        <p>Household membuat request, collector menjalankan pickup bertahap, material masuk inventori, lalu recycler membeli batch material.</p>
+        <h2>Alur sederhana tanpa chat real-time.</h2>
+        <p>Rumah tangga membuat permintaan, pengepul menjalankan pickup bertahap, material masuk inventori, lalu recycler membeli batch material.</p>
       </section>
 
       <section id="manfaat" className="login-info-section">
@@ -143,13 +143,13 @@ export default function LoginPage() {
       <section id="pasarcuan" className="login-info-section">
         <span className="section-kicker">PasarCuan</span>
         <h2>Fitur pendukung untuk barang layak pakai.</h2>
-        <p>PasarCuan membantu pengguna menjual barang bernilai, sementara layanan utama tetap request angkut sampah gratis.</p>
+        <p>PasarCuan membantu pengguna menjual barang yang masih bernilai, sementara layanan utama tetap penjemputan sampah gratis.</p>
       </section>
 
       <section id="tentang-kami" className="login-info-section">
         <span className="section-kicker">Tentang Kami</span>
         <h2>Platform ekonomi sirkular CuanSampah.</h2>
-        <p>CuanSampah menghubungkan rumah tangga, pengepul, dan recycler agar sampah terkelola sebagai material bernilai.</p>
+        <p>CuanSampah menghubungkan rumah tangga, pengepul, dan recycler agar sampah dapat dikelola menjadi material bernilai.</p>
       </section>
     </main>
   )

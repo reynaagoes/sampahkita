@@ -72,7 +72,7 @@ export default function HouseholdDashboard() {
   const done = requests.filter((item) => item.status === "COMPLETED").length
   const totalWeight = requests.reduce((sum, item) => sum + Number(item.actualWeight || item.estimatedWeight || 0), 0)
   const co2 = (done * 2.5).toFixed(1)
-  const firstName = session?.user?.name?.split(" ")[0] || "JOO"
+  const firstName = session?.user?.name?.split(" ")[0] || "Pengguna"
   const activeRequest = requests.find((item) => !["COMPLETED", "CANCELLED"].includes(String(item.status || "").toUpperCase()))
 
   return (
@@ -84,7 +84,7 @@ export default function HouseholdDashboard() {
           <div>
             <span className="section-kicker">Dashboard Rumah Tangga</span>
             <h1>Selamat datang kembali, <span>{firstName}!</span></h1>
-            <p>Kelola sampahmu, jadwalkan angkut gratis, lalu kumpulkan poin bersama CuanSampah.</p>
+            <p>Kelola sampah rumah tangga, jadwalkan penjemputan gratis, lalu kumpulkan poin bersama CuanSampah.</p>
           </div>
 
           <div className="hero-service-note">
@@ -98,8 +98,8 @@ export default function HouseholdDashboard() {
         <div className="pickup-banner">
           <div>
             <span className="free-label">LAYANAN UTAMA</span>
-            <h2>Request Angkut Sampah Gratis</h2>
-            <p>Kami datang ke rumahmu. Cukup pilih jadwal dan jenis sampah.</p>
+            <h2>Ajukan Penjemputan Sampah Gratis</h2>
+            <p>Kami datang ke rumahmu. Cukup pilih jenis sampah dan isi detail penjemputan.</p>
           </div>
           <button className="pickup-action-btn" type="button" onClick={() => router.push("/household/request/new")}>
             Buat Request
@@ -113,27 +113,27 @@ export default function HouseholdDashboard() {
             <span>poin terkumpul</span>
           </div>
           <div className="stat-card">
-            <small>Request Aktif</small>
+            <small>Permintaan Aktif</small>
             <strong>{active}</strong>
             <span>menunggu penjemputan</span>
           </div>
           <div className="stat-card">
             <small>Total Selesai</small>
             <strong>{done}</strong>
-            <span>pengambilan</span>
+            <span>pickup selesai</span>
           </div>
           <div className="stat-card">
             <small>Dampak</small>
             <strong>{co2} kg</strong>
-            <span>CO2 dicegah</span>
+            <span>emisi CO2 dihindari</span>
           </div>
         </div>
 
         <section className="classic-panel pickup-tracking-card">
           <div className="panel-head">
             <div>
-              <h2>Tracking Pickup Terbaru</h2>
-              <p>Pantau progress penjemputan seperti tracking order.</p>
+              <h2>Pelacakan Pickup Terbaru</h2>
+              <p>Pantau progres penjemputan seperti melacak status pesanan.</p>
             </div>
           </div>
 
@@ -141,7 +141,7 @@ export default function HouseholdDashboard() {
             <div className="empty-state">
               <div className="empty-icon">+</div>
               <h3>Belum ada pickup aktif</h3>
-              <p>Belum ada pickup aktif. Buat request angkut sampah untuk mulai tracking.</p>
+              <p>Belum ada pickup aktif. Buat permintaan penjemputan untuk mulai melacak prosesnya.</p>
             </div>
           ) : (
             <>
@@ -195,11 +195,11 @@ export default function HouseholdDashboard() {
           <div className="classic-panel request-panel">
             <div className="panel-head">
               <div>
-                <h2>Request Sampah</h2>
+                <h2>Permintaan Penjemputan</h2>
                 <p>Jadwal dan status penjemputan gratis</p>
               </div>
               <button className="green-small-btn" type="button" onClick={() => router.push("/household/request/new")}>
-                + Buat Request
+                + Buat Permintaan
               </button>
             </div>
 
@@ -207,7 +207,7 @@ export default function HouseholdDashboard() {
               <div className="empty-state">
                 <div className="empty-icon">+</div>
                 <h3>Belum ada jadwal penjemputan</h3>
-                <p>Buat request pertama untuk menikmati layanan gratis angkut sampah.</p>
+                <p>Buat permintaan pertama untuk menikmati layanan penjemputan sampah gratis.</p>
               </div>
             ) : (
               <div className="request-list">
@@ -222,8 +222,8 @@ export default function HouseholdDashboard() {
                       <div>
                         <h3>{item.wasteType || item.type || item.category || formatWasteTypes(item.sampahTypes)}</h3>
                         <p>{item.addressDetail || item.address || "Alamat penjemputan tersimpan"}</p>
-                        {(item.collector?.fullName || item.collectorName) && <p>Pengepul: {item.collector?.fullName || item.collectorName} {(item.collector?.phone || item.collectorPhone) && <a href={`tel:${item.collector?.phone || item.collectorPhone}`}>- Hubungi Pengepul</a>}</p>}
-                        {item.contactPhone && <p>Kontak pickup: {item.contactPhone}</p>}
+                        {(item.collector?.fullName || item.collectorName) && <p>Pengepul: {item.collector?.fullName || item.collectorName} {(item.collector?.phone || item.collectorPhone) && <a href={`tel:${item.collector?.phone || item.collectorPhone}`}>- Hubungi pengepul</a>}</p>}
+                        {item.contactPhone && <p>Kontak penjemputan: {item.contactPhone}</p>}
                       </div>
                       <span className={`status-pill ${statusInfo.tone}`}>{statusInfo.label}</span>
                     </div>
@@ -235,11 +235,11 @@ export default function HouseholdDashboard() {
 
           <aside className="dashboard-side">
             <div className="classic-panel side-impact">
-              <h2>Dampakmu untuk Bumi</h2>
+              <h2>Dampakmu untuk Lingkungan</h2>
               <div className="impact-circle" aria-hidden="true"><span /></div>
               <ul>
                 <li><span>Sampah terkumpul</span><strong>{totalWeight.toFixed(1)} kg</strong></li>
-                <li><span>CO2 dicegah</span><strong>{co2} kg</strong></li>
+                <li><span>Emisi CO2 dihindari</span><strong>{co2} kg</strong></li>
                 <li><span>Transaksi</span><strong>{requests.length}</strong></li>
               </ul>
             </div>
@@ -268,8 +268,8 @@ function PickupContactCard({ request }: { request: RequestItem }) {
     return (
       <div className="pickup-contact-card">
         <div>
-          <strong>Pengepul belum menerima request ini.</strong>
-          <p>Informasi kontak akan muncul setelah request diambil pengepul.</p>
+          <strong>Belum ada pengepul yang mengambil permintaan ini.</strong>
+          <p>Informasi kontak akan muncul setelah permintaan diterima pengepul.</p>
         </div>
       </div>
     )

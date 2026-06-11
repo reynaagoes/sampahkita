@@ -27,8 +27,8 @@ export default function ProfilePage() {
   const router = useRouter()
   const role = String(session?.user?.role || "").toUpperCase()
   const roleAction: Record<string, string> = {
-    HOUSEHOLD: "Buat Request Angkut Sampah",
-    COLLECTOR: "Lihat Request Tersedia",
+    HOUSEHOLD: "Buat Permintaan Penjemputan",
+    COLLECTOR: "Lihat Permintaan Tersedia",
     RECYCLER: "Cari Batch Material",
     ADMIN: "Buka Dashboard Admin",
   }
@@ -114,7 +114,7 @@ export default function ProfilePage() {
                 <ProfileRow label="Email" value={profile.email || session?.user?.email} />
               </>
             )}
-            <ProfileRow label="Role" value={ROLE_LABEL[role] || role} />
+            <ProfileRow label="Peran" value={ROLE_LABEL[role] || role} />
             <ProfileRow label="Status Akun" value={profile.isVerified ? "Terverifikasi" : "Aktif"} />
           </article>
 
@@ -127,7 +127,7 @@ export default function ProfilePage() {
             </div>
             <ProfileRow label="Nomor HP" value={profile.phone} />
             <ProfileRow label="Alamat" value={profile.address} />
-            <p className="card-note">Alamat penjemputan tetap dapat diisi ketika membuat request baru.</p>
+            <p className="card-note">Alamat penjemputan tetap bisa diisi kembali saat membuat permintaan baru.</p>
           </article>
 
           <article className="content-card">
@@ -139,7 +139,7 @@ export default function ProfilePage() {
             </div>
             <ProfileRow label="Password" value="Tersimpan dengan aman" />
             <button className="outline-btn" type="button" onClick={() => router.push("/forgot-password")}>
-              Ubah Password
+              Ubah Kata Sandi
             </button>
             <button className="outline-btn danger-outline-btn" type="button" onClick={() => void signOut({ callbackUrl: "/login" })}>Logout</button>
           </article>

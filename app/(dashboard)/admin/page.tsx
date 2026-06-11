@@ -228,7 +228,7 @@ export default function AdminDashboard() {
 
   const tabs = useMemo(
     () => [
-      { key: "overview", label: "Overview" },
+      { key: "overview", label: "Ringkasan" },
       { key: "verifikasi", label: `Verifikasi (${governance.verifications.length})` },
       { key: "poin", label: "Poin & Voucher" },
       { key: "transaksi", label: "Transaksi" },
@@ -271,11 +271,11 @@ export default function AdminDashboard() {
         }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Gagal menyimpan adjustment poin")
+      if (!res.ok) throw new Error(data.error || "Gagal menyimpan penyesuaian poin")
       setPointForm((current) => ({ ...current, amount: "", reason: "" }))
       await fetchData()
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Gagal menyimpan adjustment poin")
+      setError(submitError instanceof Error ? submitError.message : "Gagal menyimpan penyesuaian poin")
     } finally {
       setAdjustingPoints(false)
     }
@@ -297,7 +297,7 @@ export default function AdminDashboard() {
       <Navbar userName={session?.user?.name || ""} role="ADMIN" />
       <div style={{ maxWidth: "1120px", margin: "0 auto", padding: "32px 24px" }}>
         <div style={{ marginBottom: "24px" }}>
-          <h1 style={{ fontSize: "20px", fontWeight: "700", color: "#111", marginBottom: "2px" }}>Admin Dashboard</h1>
+          <h1 style={{ fontSize: "20px", fontWeight: "700", color: "#111", marginBottom: "2px" }}>Dashboard Admin</h1>
           <p style={{ fontSize: "13px", color: "#6b7280" }}>Pusat tata kelola platform untuk verifikasi, poin, reward, dan transaksi.</p>
         </div>
 
@@ -364,14 +364,14 @@ export default function AdminDashboard() {
                           disabled={submittingId !== null}
                           style={{ padding: "8px 14px", borderRadius: "6px", border: "none", background: "#16a34a", color: "#fff", fontSize: "12px", fontWeight: "600", cursor: "pointer", opacity: submittingId && submittingId !== `${item.id}:APPROVE` ? 0.7 : 1 }}
                         >
-                          {submittingId === `${item.id}:APPROVE` ? "Menyimpan..." : "Approve"}
+                          {submittingId === `${item.id}:APPROVE` ? "Menyimpan..." : "Setujui"}
                         </button>
                         <button
                           onClick={() => handleVerification(item.id, "REJECT")}
                           disabled={submittingId !== null}
                           style={{ padding: "8px 14px", borderRadius: "6px", border: "1px solid #e5e7eb", background: "#fff", color: "#dc2626", fontSize: "12px", fontWeight: "600", cursor: "pointer", opacity: submittingId && submittingId !== `${item.id}:REJECT` ? 0.7 : 1 }}
                         >
-                          {submittingId === `${item.id}:REJECT` ? "Menyimpan..." : "Reject"}
+                          {submittingId === `${item.id}:REJECT` ? "Menyimpan..." : "Tolak"}
                         </button>
                       </div>
                     </div>
@@ -395,7 +395,7 @@ export default function AdminDashboard() {
 
                 <div style={{ display: "grid", gridTemplateColumns: "320px minmax(0, 1fr)", gap: "16px" }}>
                   <form onSubmit={handlePointAdjustment} style={{ border: "1px solid #f3f4f6", borderRadius: "8px", padding: "16px", display: "grid", gap: "12px", alignContent: "start" }}>
-                    <div style={{ fontSize: "12px", fontWeight: "700", color: "#111" }}>Adjustment Poin</div>
+                    <div style={{ fontSize: "12px", fontWeight: "700", color: "#111" }}>Penyesuaian Poin</div>
                     <label style={{ display: "grid", gap: "6px" }}>
                       <span style={{ fontSize: "11px", color: "#6b7280" }}>User household</span>
                       <select value={pointForm.userId} onChange={(event) => setPointForm((current) => ({ ...current, userId: event.target.value }))} style={{ padding: "10px 12px", borderRadius: "6px", border: "1px solid #d1d5db", fontSize: "12px" }}>
@@ -408,8 +408,8 @@ export default function AdminDashboard() {
                     <label style={{ display: "grid", gap: "6px" }}>
                       <span style={{ fontSize: "11px", color: "#6b7280" }}>Tipe</span>
                       <select value={pointForm.type} onChange={(event) => setPointForm((current) => ({ ...current, type: event.target.value }))} style={{ padding: "10px 12px", borderRadius: "6px", border: "1px solid #d1d5db", fontSize: "12px" }}>
-                        <option value="ADD">ADD</option>
-                        <option value="DEDUCT">DEDUCT</option>
+                        <option value="ADD">Tambah</option>
+                        <option value="DEDUCT">Kurangi</option>
                       </select>
                     </label>
                     <label style={{ display: "grid", gap: "6px" }}>
@@ -421,7 +421,7 @@ export default function AdminDashboard() {
                       <textarea value={pointForm.reason} onChange={(event) => setPointForm((current) => ({ ...current, reason: event.target.value }))} rows={3} placeholder="Contoh: koreksi manual hasil audit" style={{ padding: "10px 12px", borderRadius: "6px", border: "1px solid #d1d5db", fontSize: "12px", resize: "vertical" }} />
                     </label>
                     <button type="submit" disabled={adjustingPoints} style={{ padding: "10px 14px", borderRadius: "6px", border: "none", background: "#16a34a", color: "#fff", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>
-                      {adjustingPoints ? "Menyimpan..." : "Buat transaksi poin"}
+                      {adjustingPoints ? "Menyimpan..." : "Simpan transaksi poin"}
                     </button>
                   </form>
 
@@ -449,13 +449,13 @@ export default function AdminDashboard() {
                   <div style={{ display: "flex", justifyContent: "space-between", gap: "16px", marginBottom: "14px", flexWrap: "wrap" }}>
                     <div>
                       <div style={{ fontSize: "12px", fontWeight: "700", color: "#111", marginBottom: "4px" }}>Voucher & Reward</div>
-                      <div style={{ fontSize: "11px", color: "#6b7280" }}>Ringkasan penukaran voucher platform.</div>
+                      <div style={{ fontSize: "11px", color: "#6b7280" }}>Ringkasan penukaran voucher di platform.</div>
                     </div>
                     <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-                      <div style={{ fontSize: "11px", color: "#374151" }}>Redeemed: <strong>{governance.rewards.totals.totalRedeemed}</strong></div>
-                      <div style={{ fontSize: "11px", color: "#374151" }}>Pending: <strong>{governance.rewards.totals.pending}</strong></div>
-                      <div style={{ fontSize: "11px", color: "#374151" }}>Claimed: <strong>{governance.rewards.totals.claimed}</strong></div>
-                      <div style={{ fontSize: "11px", color: "#374151" }}>Cancelled/Expired: <strong>{governance.rewards.totals.cancelledOrExpired}</strong></div>
+                      <div style={{ fontSize: "11px", color: "#374151" }}>Ditukar: <strong>{governance.rewards.totals.totalRedeemed}</strong></div>
+                      <div style={{ fontSize: "11px", color: "#374151" }}>Menunggu: <strong>{governance.rewards.totals.pending}</strong></div>
+                      <div style={{ fontSize: "11px", color: "#374151" }}>Diklaim: <strong>{governance.rewards.totals.claimed}</strong></div>
+                      <div style={{ fontSize: "11px", color: "#374151" }}>Batal/Kedaluwarsa: <strong>{governance.rewards.totals.cancelledOrExpired}</strong></div>
                     </div>
                   </div>
 
@@ -468,10 +468,10 @@ export default function AdminDashboard() {
                           <div style={{ fontSize: "13px", fontWeight: "700", color: "#111", marginBottom: "4px" }}>{item.rewardName}</div>
                           <div style={{ fontSize: "11px", color: "#6b7280", marginBottom: "10px" }}>{item.pointsCost} poin</div>
                           <div style={{ display: "grid", gap: "6px" }}>
-                            <div style={{ fontSize: "11px", color: "#374151" }}>Total redeemed: <strong>{item.totalRedeemed}</strong></div>
-                            <div style={{ fontSize: "11px", color: "#374151" }}>Pending: <strong>{item.pending}</strong></div>
-                            <div style={{ fontSize: "11px", color: "#374151" }}>Claimed: <strong>{item.claimed}</strong></div>
-                            <div style={{ fontSize: "11px", color: "#374151" }}>Cancelled/Expired: <strong>{item.cancelledOrExpired}</strong></div>
+                            <div style={{ fontSize: "11px", color: "#374151" }}>Total ditukar: <strong>{item.totalRedeemed}</strong></div>
+                            <div style={{ fontSize: "11px", color: "#374151" }}>Menunggu: <strong>{item.pending}</strong></div>
+                            <div style={{ fontSize: "11px", color: "#374151" }}>Diklaim: <strong>{item.claimed}</strong></div>
+                            <div style={{ fontSize: "11px", color: "#374151" }}>Batal/Kedaluwarsa: <strong>{item.cancelledOrExpired}</strong></div>
                           </div>
                         </div>
                       ))}
@@ -482,7 +482,7 @@ export default function AdminDashboard() {
             ) : tab === "transaksi" ? (
               <div style={{ display: "grid", gap: "16px" }}>
                 <div style={{ border: "1px solid #f3f4f6", borderRadius: "8px", padding: "16px" }}>
-                  <div style={{ fontSize: "12px", fontWeight: "700", color: "#111", marginBottom: "12px" }}>Pickup Request</div>
+                  <div style={{ fontSize: "12px", fontWeight: "700", color: "#111", marginBottom: "12px" }}>Permintaan Pickup</div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: "8px", marginBottom: "14px" }}>
                     {PICKUP_STATUSES.map((item) => (
                       <div key={item} style={{ border: "1px solid #f3f4f6", borderRadius: "8px", padding: "10px" }}>
@@ -522,11 +522,11 @@ export default function AdminDashboard() {
 
                 <div style={{ border: "1px solid #f3f4f6", borderRadius: "8px", padding: "16px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: "16px", marginBottom: "12px", flexWrap: "wrap" }}>
-                    <div style={{ fontSize: "12px", fontWeight: "700", color: "#111" }}>Batch Transaction</div>
+                    <div style={{ fontSize: "12px", fontWeight: "700", color: "#111" }}>Transaksi Batch</div>
                     <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
                       <div style={{ fontSize: "11px", color: "#374151" }}>Nilai batch: <strong>{formatCurrency(governance.transactions.finance.totalBatchValue)}</strong></div>
-                      <div style={{ fontSize: "11px", color: "#374151" }}>Platform fee: <strong>{formatCurrency(governance.transactions.finance.totalPlatformFee)}</strong></div>
-                      <div style={{ fontSize: "11px", color: "#374151" }}>Earning collector: <strong>{formatCurrency(governance.transactions.finance.totalCollectorEarning)}</strong></div>
+                      <div style={{ fontSize: "11px", color: "#374151" }}>Biaya platform: <strong>{formatCurrency(governance.transactions.finance.totalPlatformFee)}</strong></div>
+                      <div style={{ fontSize: "11px", color: "#374151" }}>Pendapatan pengepul: <strong>{formatCurrency(governance.transactions.finance.totalCollectorEarning)}</strong></div>
                     </div>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(9, minmax(0, 1fr))", gap: "8px", marginBottom: "14px" }}>
@@ -545,7 +545,7 @@ export default function AdminDashboard() {
                   ) : null}
                   <div style={{ display: "grid", gap: "10px" }}>
                     {governance.transactions.batches.recent.length === 0 ? (
-                      <div style={{ fontSize: "12px", color: "#9ca3af" }}>Belum ada batch transaction.</div>
+                      <div style={{ fontSize: "12px", color: "#9ca3af" }}>Belum ada transaksi batch.</div>
                     ) : (
                       governance.transactions.batches.recent.map((item) => (
                         <div key={item.id} style={{ display: "flex", justifyContent: "space-between", gap: "12px", paddingBottom: "10px", borderBottom: "1px solid #f9fafb" }}>
@@ -575,7 +575,7 @@ export default function AdminDashboard() {
                   <div style={{ fontSize: "10px", fontWeight: "700", color: "#374151", letterSpacing: "1px", marginBottom: "12px" }}>GOVERNANCE</div>
                   {[
                     ["Collector/Recycler belum verifikasi", governance.verifications.length],
-                    ["Reward pending", governance.rewards.totals.pending],
+                    ["Reward menunggu klaim", governance.rewards.totals.pending],
                     ["Pickup aktif", (governance.transactions.pickups.counts.OPEN || 0) + (governance.transactions.pickups.counts.ASSIGNED || 0) + (governance.transactions.pickups.counts.ON_THE_WAY || 0) + (governance.transactions.pickups.counts.ARRIVED || 0) + (governance.transactions.pickups.counts.WEIGHED || 0)],
                     ["Batch aktif", (governance.transactions.batches.counts.AVAILABLE || 0) + (governance.transactions.batches.counts.OFFER_SUBMITTED || 0) + (governance.transactions.batches.counts.COUNTER_OFFERED || 0) + (governance.transactions.batches.counts.APPROVED || 0) + (governance.transactions.batches.counts.IN_DELIVERY || 0) + (governance.transactions.batches.counts.DELIVERED || 0)],
                   ].map(([label, value]) => (
@@ -590,9 +590,9 @@ export default function AdminDashboard() {
                   <div style={{ fontSize: "10px", fontWeight: "700", color: "#374151", letterSpacing: "1px", marginBottom: "12px" }}>RINGKASAN NILAI</div>
                   {[
                     ["Poin beredar", `${formatNumber(governance.points.totalCirculating)} poin`],
-                    ["Total redeemed voucher", governance.rewards.totals.totalRedeemed],
-                    ["Total platform fee", formatCurrency(governance.transactions.finance.totalPlatformFee)],
-                    ["Earning collector", formatCurrency(governance.transactions.finance.totalCollectorEarning)],
+                    ["Total voucher ditukar", governance.rewards.totals.totalRedeemed],
+                    ["Total biaya platform", formatCurrency(governance.transactions.finance.totalPlatformFee)],
+                    ["Pendapatan pengepul", formatCurrency(governance.transactions.finance.totalCollectorEarning)],
                   ].map(([label, value]) => (
                     <div key={String(label)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: "1px solid #f9fafb" }}>
                       <span style={{ fontSize: "12px", color: "#374151" }}>{label}</span>

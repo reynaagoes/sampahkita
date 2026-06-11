@@ -133,12 +133,12 @@ export default function BidPage() {
         <div>
           <span className="section-kicker">Fitur tambahan</span>
           <h1>PasarCuan</h1>
-          <p>Jual barang layak pakai atau material daur ulang. Fitur pendukung setelah layanan angkut sampah.</p>
+          <p>Jual barang layak pakai atau material daur ulang. Fitur ini melengkapi layanan penjemputan sampah.</p>
         </div>
         <div className="market-hero-note">
-          <strong>Angkut Sampah Gratis tetap fitur utama.</strong>
-          <span>Tetap butuh penjemputan sampah?</span>
-          {session?.user?.role === "HOUSEHOLD" && <button type="button" onClick={() => router.push("/household/request/new")}>Request Angkut Gratis</button>}
+          <strong>Penjemputan sampah gratis tetap menjadi layanan utama.</strong>
+          <span>Masih butuh penjemputan sampah?</span>
+          {session?.user?.role === "HOUSEHOLD" && <button type="button" onClick={() => router.push("/household/request/new")}>Ajukan Penjemputan Gratis</button>}
         </div>
       </section>
 
@@ -203,12 +203,12 @@ export default function BidPage() {
                         void placeBid(item.id)
                       }}
                     >
-                      Bid Sekarang
+                      Tawar Sekarang
                     </button>
                   )}
 
                   {isFull && <button className="soft-btn" type="button">Terjual</button>}
-                  {isOwner && <button className="soft-btn" type="button">Listing kamu</button>}
+                  {isOwner && <button className="soft-btn" type="button">Listing milikmu</button>}
                 </div>
               </article>
             )

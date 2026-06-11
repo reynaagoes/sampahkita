@@ -16,13 +16,13 @@ type PickupTimelineProps = {
 const ACTIVE_STEPS = [
   {
     status: "OPEN",
-    label: "Request dibuat",
-    description: "Request penjemputan sudah dibuat dan menunggu pengepul.",
+    label: "Permintaan dibuat",
+    description: "Permintaan penjemputan sudah dibuat dan sedang menunggu pengepul.",
   },
   {
     status: "ASSIGNED",
-    label: "Pengepul menerima request",
-    description: "Pengepul sudah menerima request penjemputan.",
+    label: "Pengepul menerima permintaan",
+    description: "Pengepul sudah menerima permintaan penjemputan.",
   },
   {
     status: "ON_THE_WAY",
@@ -48,8 +48,8 @@ const ACTIVE_STEPS = [
 
 const CANCELLED_STEP = {
   status: "CANCELLED",
-  label: "Request dibatalkan",
-  description: "Request ini dibatalkan.",
+  label: "Permintaan dibatalkan",
+  description: "Permintaan ini dibatalkan.",
 }
 
 function formatDateTime(value?: string) {

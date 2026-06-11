@@ -76,7 +76,7 @@ function PickupCard({ req, onStatus, onPickup, onComplete }: { req: PickupReques
         <div className="data-row-copy">
           <span className="data-eyebrow">{getTypes(req)}</span>
           <h3>{req.addressDetail || "Alamat penjemputan"}</h3>
-          <p>Household: {req.householdName || "Rumah tangga"} {req.estimatedWeight ? `- estimasi ${req.estimatedWeight} kg` : ""}</p>
+          <p>Rumah tangga: {req.householdName || "Pengguna rumah tangga"} {req.estimatedWeight ? `- estimasi ${req.estimatedWeight} kg` : ""}</p>
           <p>Nomor: {householdPhone || "Nomor tidak tersedia"}</p>
           <p>Status: {getRequestStatusLabel(req.status)} {req.actualWeight ? `- ${req.actualWeight} kg` : ""}</p>
           <p>{req.createdAt ? `Dibuat ${new Date(req.createdAt).toLocaleDateString("id-ID")}` : "Jadwal pickup mengikuti konfirmasi pengepul."}</p>
@@ -84,7 +84,7 @@ function PickupCard({ req, onStatus, onPickup, onComplete }: { req: PickupReques
 
         <div className="row-actions collector-pickup-actions">
           {householdWhatsAppUrl ? (
-            <a className="outline-btn" href={householdWhatsAppUrl} target="_blank" rel="noopener noreferrer">Hubungi Household</a>
+            <a className="outline-btn" href={householdWhatsAppUrl} target="_blank" rel="noopener noreferrer">Hubungi Rumah Tangga</a>
           ) : (
             <span className="status-pill warning">Nomor tidak tersedia</span>
           )}
@@ -188,7 +188,7 @@ export default function CollectorDashboard() {
     const response = await fetch(`/api/requests/${id}/accept`, { method: "POST" })
     const data = await response.json().catch(() => ({}))
     if (response.ok) void fetchData()
-    else alert(data.error || "Request tidak dapat diambil")
+    else alert(data.error || "Permintaan tidak dapat diambil")
   }
 
   async function pickupRequest(id: string, weight: string) {
@@ -237,15 +237,15 @@ export default function CollectorDashboard() {
         <Navbar userName={session?.user?.name || ""} role="COLLECTOR" />
         <div className="role-hero-content">
           <span className="section-kicker">Dashboard Pengepul</span>
-          <h1>Halo, {session.user.name?.split(" ")[0]}. Ambil request sampah dan kelola pickup harianmu.</h1>
-          <p>Pengepul mengambil request, input berat aktual, menyelesaikan pickup, lalu menyiapkan batch material untuk Recycler.</p>
-          <button className="light-btn" type="button" onClick={() => setTab("available")}>Ambil Request Sampah</button>
+          <h1>Halo, {session.user.name?.split(" ")[0]}. Ambil permintaan sampah dan kelola pickup harianmu.</h1>
+          <p>Pengepul mengambil permintaan, mengisi berat aktual, menyelesaikan pickup, lalu menyiapkan batch material untuk recycler.</p>
+          <button className="light-btn" type="button" onClick={() => setTab("available")}>Ambil Permintaan Sampah</button>
         </div>
       </section>
 
       <section className="role-dashboard-shell">
         <div className="role-stat-grid role-stat-grid-four">
-          <article className="stat-card"><small>Request Tersedia</small><strong>{requests.length}</strong><span>siap diambil</span></article>
+          <article className="stat-card"><small>Permintaan Tersedia</small><strong>{requests.length}</strong><span>siap diambil</span></article>
           <article className="stat-card"><small>Pickup Aktif</small><strong>{activePickups}</strong><span>perlu diselesaikan</span></article>
           <article className="stat-card"><small>Pickup Selesai</small><strong>{completedPickups.length}</strong><span>sudah tervalidasi</span></article>
           <article className="stat-card"><small>Berat Terkumpul</small><strong>{totalCollected.toFixed(1)}</strong><span>kg material</span></article>
@@ -258,7 +258,7 @@ export default function CollectorDashboard() {
 
         <section className="content-card role-workspace">
           <div className="tab-list">
-            <button className={tab === "available" ? "active" : ""} type="button" onClick={() => setTab("available")}>Request Tersedia <span>{requests.length}</span></button>
+            <button className={tab === "available" ? "active" : ""} type="button" onClick={() => setTab("available")}>Permintaan Tersedia <span>{requests.length}</span></button>
             <button className={tab === "mypickups" ? "active" : ""} type="button" onClick={() => setTab("mypickups")}>Pickup Saya <span>{myPickups.length}</span></button>
             <button className={tab === "inventory" ? "active" : ""} type="button" onClick={() => setTab("inventory")}>Inventori Material <span>{inventory.length}</span></button>
             <button className={tab === "batches" ? "active" : ""} type="button" onClick={() => setTab("batches")}>Batch Material <span>{batches.length}</span></button>
@@ -277,10 +277,10 @@ export default function CollectorDashboard() {
           ) : tab === "available" ? (
             requests.length ? requests.map((request) => (
               <AvailableRequestCard key={request.id} request={request} onAccept={acceptRequest} />
-            )) : <EmptyState title="Tidak ada request tersedia" text="Request baru dari rumah tangga akan muncul di sini." />
+            )) : <EmptyState title="Tidak ada permintaan tersedia" text="Permintaan baru dari rumah tangga akan muncul di sini." />
           ) : tab === "mypickups" ? (
             myPickups.length ? myPickups.map((request) => <PickupCard key={request.id} req={request} onStatus={updatePickupStatus} onPickup={pickupRequest} onComplete={completeRequest} />) :
-              <EmptyState title="Belum ada pickup" text="Ambil request sampah untuk mulai mengelola pickup." />
+              <EmptyState title="Belum ada pickup" text="Ambil permintaan sampah untuk mulai mengelola pickup." />
           ) : tab === "inventory" ? (
             inventory.length ? inventory.map((item) => <article className="data-row" key={item.id}><div className="data-row-copy"><span className="data-eyebrow">{item.wasteType}</span><h3>{Number(item.availableWeight).toFixed(1)} kg tersedia</h3><p>Stok bertambah setelah pickup selesai dan berkurang ketika batch dibuat.</p></div></article>) : <EmptyState title="Inventori masih kosong" text="Material dari pickup selesai akan masuk ke sini." />
           ) : tab === "batches" ? (
@@ -318,15 +318,15 @@ function AvailableRequestCard({ request, onAccept }: { request: PickupRequest; o
         <h3>{request.addressDetail || "Alamat penjemputan"}</h3>
         <p>Dari {request.householdName || "Rumah tangga"} {request.estimatedWeight ? `- estimasi ${request.estimatedWeight} kg` : ""}</p>
         {householdWhatsAppUrl ? (
-          <p><a href={householdWhatsAppUrl} target="_blank" rel="noopener noreferrer">Hubungi Household</a></p>
+          <p><a href={householdWhatsAppUrl} target="_blank" rel="noopener noreferrer">Hubungi Rumah Tangga</a></p>
         ) : (
           <p>Nomor tidak tersedia</p>
         )}
         <p>{request.createdAt ? `Dibuat ${new Date(request.createdAt).toLocaleDateString("id-ID")}` : "Jadwal pickup mengikuti konfirmasi pengepul."}</p>
       </div>
       <div className="row-actions">
-        <button className="outline-btn" type="button" disabled title="Halaman detail request belum tersedia">Lihat Detail - Segera Hadir</button>
-        <button className="green-small-btn" type="button" onClick={() => void onAccept(request.id)}>Ambil Request</button>
+        <button className="outline-btn" type="button" disabled title="Halaman detail permintaan belum tersedia">Lihat Detail - Segera Hadir</button>
+        <button className="green-small-btn" type="button" onClick={() => void onAccept(request.id)}>Ambil Permintaan</button>
       </div>
     </article>
   )
@@ -364,12 +364,12 @@ function PurchaseRequestCard({
           <p>Alamat kirim: {recyclerAddress}</p>
           <p>Harga awal: Rp {Number(batch.pricePerKg).toLocaleString("id-ID")}/kg</p>
           {batch.offerPrice ? <p>Harga tawar recycler: Rp {Number(batch.offerPrice).toLocaleString("id-ID")}</p> : null}
-          {batch.counterPrice ? <p>Harga balik collector: Rp {Number(batch.counterPrice).toLocaleString("id-ID")}</p> : null}
+          {batch.counterPrice ? <p>Harga penawaran balik pengepul: Rp {Number(batch.counterPrice).toLocaleString("id-ID")}</p> : null}
           {batch.agreedPrice ? <p>Harga deal: Rp {Number(batch.agreedPrice).toLocaleString("id-ID")}</p> : null}
-          {batch.platformFee ? <p>Platform fee 5%: Rp {Number(batch.platformFee).toLocaleString("id-ID")}</p> : null}
-          {batch.collectorEarning ? <p>Pendapatan collector: Rp {Number(batch.collectorEarning).toLocaleString("id-ID")}</p> : null}
+          {batch.platformFee ? <p>Biaya platform 5%: Rp {Number(batch.platformFee).toLocaleString("id-ID")}</p> : null}
+          {batch.collectorEarning ? <p>Pendapatan pengepul: Rp {Number(batch.collectorEarning).toLocaleString("id-ID")}</p> : null}
           {batch.offerNote ? <p>Catatan recycler: {batch.offerNote}</p> : null}
-          {batch.counterNote ? <p>Catatan collector: {batch.counterNote}</p> : null}
+          {batch.counterNote ? <p>Catatan pengepul: {batch.counterNote}</p> : null}
           {batch.deliveryNote ? <p>Catatan pengiriman: {batch.deliveryNote}</p> : null}
         </div>
 
@@ -384,8 +384,8 @@ function PurchaseRequestCard({
                 </>
               )}
               <div className="row-actions collector-counter-form">
-                <input type="number" value={counterPrice} onChange={(event) => setCounterPrice(event.target.value)} placeholder="Harga balik collector" />
-                <input type="text" value={counterNote} onChange={(event) => setCounterNote(event.target.value)} placeholder="Catatan collector" />
+                <input type="number" value={counterPrice} onChange={(event) => setCounterPrice(event.target.value)} placeholder="Harga penawaran balik" />
+                <input type="text" value={counterNote} onChange={(event) => setCounterNote(event.target.value)} placeholder="Catatan pengepul" />
                 <button className="green-small-btn" type="button" onClick={() => onCounter(counterPrice, counterNote)}>Tawar Balik</button>
               </div>
             </>

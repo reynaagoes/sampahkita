@@ -3,8 +3,8 @@ import { CSSProperties, FormEvent, useState } from "react"
 import { useRouter } from "next/navigation"
 
 const ROLES = [
-  { value: "HOUSEHOLD", code: "H", label: "Rumah Tangga", desc: "Saya ingin menjual sampah dan kumpulkan poin" },
-  { value: "COLLECTOR", code: "C", label: "Pengepul Sampah", desc: "Saya mengumpulkan dan mendistribusikan sampah" },
+  { value: "HOUSEHOLD", code: "H", label: "Rumah Tangga", desc: "Saya ingin menjual sampah dan mengumpulkan poin" },
+  { value: "COLLECTOR", code: "C", label: "Pengepul Sampah", desc: "Saya mengumpulkan dan menyalurkan material daur ulang" },
   { value: "RECYCLER",  code: "R", label: "Industri Daur Ulang", desc: "Saya membeli material untuk diolah kembali" },
 ]
 
@@ -60,7 +60,7 @@ export default function RegisterPage() {
 
         <div style={{background:"#fff",borderRadius:"10px",border:"1px solid #e5e7eb",padding:"28px"}}>
           <h2 style={{fontSize:"20px",fontWeight:"700",color:"#111",marginBottom:"4px",letterSpacing:"-0.3px"}}>Buat akun</h2>
-          <p style={{fontSize:"13px",color:"#9ca3af",marginBottom:"20px"}}>Bergabung dan mulai hasilkan cuan dari sampah</p>
+          <p style={{fontSize:"13px",color:"#9ca3af",marginBottom:"20px"}}>Bergabung dan mulai menghasilkan nilai dari sampah</p>
 
           {error && <div style={{fontSize:"13px",padding:"10px 14px",borderRadius:"6px",background:"#fef2f2",color:"#dc2626",marginBottom:"16px",border:"1px solid #fecaca"}}>{error}</div>}
 
@@ -100,13 +100,13 @@ export default function RegisterPage() {
               <textarea value={form.address} onChange={e => setForm({...form, address: e.target.value})} style={{...S.input,minHeight:"88px",resize:"vertical"}} placeholder="Alamat lengkap" />
             </div>
             <div style={{marginBottom:"20px"}}>
-              <label style={S.label}>PASSWORD</label>
-              <input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} style={S.input} placeholder="Min. 8 karakter" required />
+              <label style={S.label}>KATA SANDI</label>
+              <input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} style={S.input} placeholder="Minimal 8 karakter" required />
             </div>
 
             <button type="submit" disabled={loading}
               style={{width:"100%",padding:"11px",borderRadius:"6px",border:"none",background:loading?"#9ca3af":"#111",color:"#fff",fontSize:"14px",fontWeight:"600",cursor:loading?"not-allowed":"pointer"}}>
-              {loading ? "Mendaftar..." : "Daftar Sekarang"}
+              {loading ? "Mendaftarkan akun..." : "Daftar Sekarang"}
             </button>
           </form>
         </div>
