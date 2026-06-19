@@ -504,7 +504,7 @@ export default function AdminDashboard() {
                             <div style={{ fontSize: "12px", color: "#9ca3af", marginBottom: "2px" }}>{parseWasteTypes(item.sampahTypes)}</div>
                             <div style={{ fontSize: "13px", fontWeight: "600", color: "#111", marginBottom: "2px" }}>{item.addressDetail || "-"}</div>
                             <div style={{ fontSize: "11px", color: "#6b7280" }}>
-                              {item.householdName || "-"} | Collector: {item.collectorName || "-"} | Berat: {item.actualWeight || item.estimatedWeight || 0} kg
+                              {item.householdName || "-"} | Pengepul: {item.collectorName || "-"} | Berat: {item.actualWeight || item.estimatedWeight || 0} kg
                             </div>
                           </div>
                           <div style={{ textAlign: "right", flexShrink: 0 }}>
@@ -551,9 +551,9 @@ export default function AdminDashboard() {
                         <div key={item.id} style={{ display: "flex", justifyContent: "space-between", gap: "12px", paddingBottom: "10px", borderBottom: "1px solid #f9fafb" }}>
                           <div style={{ minWidth: 0 }}>
                             <div style={{ fontSize: "13px", fontWeight: "600", color: "#111", marginBottom: "2px" }}>{item.wasteType || "-"} · {Number(item.totalWeight || 0)} kg</div>
-                            <div style={{ fontSize: "11px", color: "#6b7280", marginBottom: "2px" }}>Collector: {item.collectorName || "-"} | Recycler: {item.recyclerName || "-"}</div>
+                            <div style={{ fontSize: "11px", color: "#6b7280", marginBottom: "2px" }}>Pengepul: {item.collectorName || "-"} | Recycler: {item.recyclerName || "-"}</div>
                             <div style={{ fontSize: "11px", color: "#374151" }}>
-                              Agreed: {formatCurrency(item.agreedPrice)} | Fee: {formatCurrency(item.platformFee)} | Earning: {formatCurrency(item.collectorEarning)}
+                              Harga deal: {formatCurrency(item.agreedPrice)} | Biaya: {formatCurrency(item.platformFee)} | Pendapatan: {formatCurrency(item.collectorEarning)}
                             </div>
                           </div>
                           <div style={{ textAlign: "right", flexShrink: 0 }}>
